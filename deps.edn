@@ -1,0 +1,15 @@
+{:paths
+ ["src" "resources"]
+
+ :deps
+ {org.clojure/clojurescript  {:mvn/version "1.10.339"}
+  binaryage/devtools         {:mvn/version "0.9.7"}
+  reagent                    {:mvn/version "0.8.1"}
+  re-frame                   {:mvn/version "0.10.6"}}
+
+ :aliases
+ {:dev
+  {:extra-deps
+   {figwheel-sidecar        {:mvn/version "0.5.15" :exclusions [com.google.javascript/closure-compiler]}
+    cider/cider-nrepl       {:mvn/version "0.16.0"}
+    com.cemerick/piggieback {:mvn/version "0.2.2"}}}}}
