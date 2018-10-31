@@ -68,6 +68,15 @@
 
     ctx))
 
+(defn add-point! [graph coords]
+  (let [ctx (:context graph)
+        x-coord (first coords)
+        y-coord (second coords)]
+
+    (.beginPath ctx)
+    (.arc ctx x-coord y-coord 3 (* (.PI js/Math) 2) true)
+    (.fill ctx)))
+
 ;; Goal: write a helper function that takes the point where a user clicked on
 ;; the canvas (in terms of pixel values) and return the associated data values.
 (defn coords-to-values
@@ -84,18 +93,19 @@
     {:equations []
      :animate false
      ;; Goal: store x and y values in state
-     :points []}))
+     :coords []}))
 
 (defn re-trigger-timer []
   (r/next-tick (fn [] (rf/dispatch [:timer]))))
 
 ;; Goal: dispatch the :click event when a user clicks and capture the
 ;; coordinates of their click
-(defn canvas-click []
-  (let [x-coord (...)
-        y-coord (...)]
-    (rf/dispatch [:click [x-coord y-coord]])))
-
+(defn canvas-click [event canvas]
+  (let [rect (.getBoundingClientRect canvas)
+        x-coord (- (.clientX event) (.left rect))
+        y-coord (- (.clientY event) (.top rect))]
+    (rf/dispatch
+      [:click [x-coord y-coord]])))
 
 (rf/reg-event-db
   :timer
@@ -113,11 +123,11 @@
  (fn [db [_ eq]]
    (update-in db [:equations] conj {:equation eq :opacity 100})))
 
-;; Goal: convert x and y coords into values (pixels->data), and store in db
+;; Goal: store x and y coords in db
 (rf/reg-event-db
   :click
   (fn [db [x-coord y-coord]]
-    (update-in db [:points] conj (coords-to-values x-coord y-coord))))
+    (update-in db [:coords] conj [x-coord y-coord])))
 
 (rf/reg-event-fx
  :toggle-animation
@@ -141,9 +151,9 @@
    (:animate db)))
 
 (rf/reg-sub
-  :points
+  :coords
   (fn [db _]
-    (:points db)))
+    (:coords db)))
 
 ;; views
 
@@ -175,7 +185,7 @@
 (defn plot-inner []
   (let [graph      (atom nil)
         update     (fn [comp]
-                     (let [{:keys [equations]} (r/props comp)
+                     (let [{:keys [equations coords]} (r/props comp)
                            canvas (:canvas @graph)]
 
                        (.clearRect (:context @graph)
@@ -189,12 +199,20 @@
                           @graph
                           (:equation %)
                           (:opacity %))
-                        equations)))]
+                        equations)
+
+                       (run!
+                         #(add-point!
+                           @graph
+                           (:coords %))
+                         coords)))]
 
     (r/create-class
       {:reagent-render (fn []
                          [:div
-                          [:canvas#plot {:width "600" :height "400"}]])
+                          [:canvas#plot
+                           {:width "600" :height "400"
+                            :on-click #(canvas-click % (:canvas @graph))}]])
 
        :component-did-mount (fn [comp]
                               (let [g (make-graph)]
@@ -205,9 +223,10 @@
 
 (defn plot-outer []
   (let [equations (rf/subscribe [:equations])
-        points (rf/subscribe [:points])]
+        coords (rf/subscribe :coords)]
     (fn []
-      [plot-inner {:equations @equations}])))
+      [plot-inner {:equations @equations
+                   :coords @coords}])))
 
 (defn ui
   []
