@@ -68,16 +68,34 @@
 
     ctx))
 
+;; Goal: write a helper function that takes the point where a user clicked on
+;; the canvas (in terms of pixel values) and return the associated data values.
+(defn coords-to-values
+  [coords config]
+  "Takes a vector with two elements: an x pixel value and y pixel value, and a
+  config object.  Returns a vector with an x _value_ and a y _value_, given the
+  mapping in the config.")
+
 ;; events
 
 (rf/reg-event-db
   :initialize
   (fn [_ _]
     {:equations []
-     :animate false}))
+     :animate false
+     ;; Goal: store x and y values in state
+     :points []}))
 
 (defn re-trigger-timer []
   (r/next-tick (fn [] (rf/dispatch [:timer]))))
+
+;; Goal: dispatch the :click event when a user clicks and capture the
+;; coordinates of their click
+(defn canvas-click []
+  (let [x-coord (...)
+        y-coord (...)]
+    (rf/dispatch [:click [x-coord y-coord]])))
+
 
 (rf/reg-event-db
   :timer
@@ -94,6 +112,12 @@
  :new-eq
  (fn [db [_ eq]]
    (update-in db [:equations] conj {:equation eq :opacity 100})))
+
+;; Goal: convert x and y coords into values (pixels->data), and store in db
+(rf/reg-event-db
+  :click
+  (fn [db [x-coord y-coord]]
+    (update-in db [:points] conj (coords-to-values x-coord y-coord))))
 
 (rf/reg-event-fx
  :toggle-animation
@@ -115,6 +139,11 @@
  :animate
  (fn [db _]
    (:animate db)))
+
+(rf/reg-sub
+  :points
+  (fn [db _]
+    (:points db)))
 
 ;; views
 
@@ -175,7 +204,8 @@
        :display-name "plot-inner"})))
 
 (defn plot-outer []
-  (let [equations (rf/subscribe [:equations])]
+  (let [equations (rf/subscribe [:equations])
+        points (rf/subscribe [:points])]
     (fn []
       [plot-inner {:equations @equations}])))
 
