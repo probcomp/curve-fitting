@@ -74,8 +74,10 @@
         y-coord (second coords)]
 
     (.beginPath ctx)
-    (.arc ctx x-coord y-coord 3 (* (.PI js/Math) 2) true)
-    (.fill ctx)))
+    (.arc ctx x-coord y-coord 3 (* js/Math.PI 2) true)
+    (.fill ctx)
+
+    ctx))
 
 ;; Goal: write a helper function that takes the point where a user clicked on
 ;; the canvas (in terms of pixel values) and return the associated data values.
@@ -102,8 +104,12 @@
 ;; coordinates of their click
 (defn canvas-click [event canvas]
   (let [rect (.getBoundingClientRect canvas)
-        x-coord (- (.clientX event) (.left rect))
-        y-coord (- (.clientY event) (.top rect))]
+        x-coord (-
+                  (goog.object/get (goog.object/get event "nativeEvent") "clientX")
+                  (goog.object/get rect "left"))
+        y-coord (-
+                  (goog.object/get (goog.object/get event "nativeEvent") "clientY")
+                  (goog.object/get rect "top"))]
     (rf/dispatch
       [:click [x-coord y-coord]])))
 
@@ -126,8 +132,10 @@
 ;; Goal: store x and y coords in db
 (rf/reg-event-db
   :click
-  (fn [db [x-coord y-coord]]
-    (update-in db [:coords] conj [x-coord y-coord])))
+  (fn [db [_ coords]]
+    (let [x (first (goog.object/get coords "tail"))
+          y (second (goog.object/get coords "tail"))]
+      (update-in db [:coords] conj [x y]))))
 
 (rf/reg-event-fx
  :toggle-animation
@@ -193,7 +201,7 @@
                                    (:min-y   @graph)
                                    (:range-x @graph)
                                    (:range-y @graph))
-
+                       
                        (run!
                         #(add-equation!
                           @graph
@@ -212,7 +220,7 @@
                          [:div
                           [:canvas#plot
                            {:width "600" :height "400"
-                            :on-click #(canvas-click % (:canvas @graph))}]])
+                            :on-click (fn [event] (canvas-click event (:canvas @graph)))}]])
 
        :component-did-mount (fn [comp]
                               (let [g (make-graph)]
@@ -223,7 +231,7 @@
 
 (defn plot-outer []
   (let [equations (rf/subscribe [:equations])
-        coords (rf/subscribe :coords)]
+        coords (rf/subscribe [:coords])]
     (fn []
       [plot-inner {:equations @equations
                    :coords @coords}])))
