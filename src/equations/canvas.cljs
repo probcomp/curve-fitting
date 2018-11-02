@@ -70,22 +70,14 @@
 
 (defn add-point! [graph coords]
   (let [ctx (:context graph)
-        x-coord (first coords)
-        y-coord (second coords)]
+        x-coord (first (goog.object/get coords "tail"))
+        y-coord (second (goog.object/get coords  "tail"))]
 
+    (set! (.-fillStyle ctx) "red")
     (.beginPath ctx)
-    (.arc ctx x-coord y-coord 3 (* js/Math.PI 2) true)
+    (.arc ctx x-coord y-coord (/ 3 (:scale-x graph)) 0 (* js/Math.PI 2) true)
     (.fill ctx)
-
     ctx))
-
-;; Goal: write a helper function that takes the point where a user clicked on
-;; the canvas (in terms of pixel values) and return the associated data values.
-(defn coords-to-values
-  [coords config]
-  "Takes a vector with two elements: an x pixel value and y pixel value, and a
-  config object.  Returns a vector with an x _value_ and a y _value_, given the
-  mapping in the config.")
 
 ;; events
 
@@ -94,22 +86,24 @@
   (fn [_ _]
     {:equations []
      :animate false
-     ;; Goal: store x and y values in state
      :coords []}))
 
 (defn re-trigger-timer []
   (r/next-tick (fn [] (rf/dispatch [:timer]))))
 
-;; Goal: dispatch the :click event when a user clicks and capture the
-;; coordinates of their click
-(defn canvas-click [event canvas]
-  (let [rect (.getBoundingClientRect canvas)
-        x-coord (-
-                  (goog.object/get (goog.object/get event "nativeEvent") "clientX")
-                  (goog.object/get rect "left"))
-        y-coord (-
-                  (goog.object/get (goog.object/get event "nativeEvent") "clientY")
-                  (goog.object/get rect "top"))]
+(defn canvas-click [event graph]
+  (let [rect (.getBoundingClientRect (:canvas graph))
+        x-coord (/ (-
+                     (goog.object/get (goog.object/get event "nativeEvent") "clientX")
+                     (goog.object/get rect "left")
+                     (:center-x graph))
+                   (:scale-x graph))
+        y-coord (/ (-
+                     (goog.object/get (goog.object/get event "nativeEvent") "clientY")
+                     (goog.object/get rect "top")
+                     (:center-y graph))
+                   (:scale-y graph))]
+    (js/console.log (:scale-y graph))
     (rf/dispatch
       [:click [x-coord y-coord]])))
 
@@ -129,7 +123,6 @@
  (fn [db [_ eq]]
    (update-in db [:equations] conj {:equation eq :opacity 100})))
 
-;; Goal: store x and y coords in db
 (rf/reg-event-db
   :click
   (fn [db [_ coords]]
@@ -193,15 +186,14 @@
 (defn plot-inner []
   (let [graph      (atom nil)
         update     (fn [comp]
-                     (let [{:keys [equations coords]} (r/props comp)
-                           canvas (:canvas @graph)]
+                     (let [{:keys [equations coords]} (r/props comp)]
 
                        (.clearRect (:context @graph)
                                    (:min-x   @graph)
                                    (:min-y   @graph)
                                    (:range-x @graph)
                                    (:range-y @graph))
-                       
+
                        (run!
                         #(add-equation!
                           @graph
@@ -212,7 +204,7 @@
                        (run!
                          #(add-point!
                            @graph
-                           (:coords %))
+                           %)
                          coords)))]
 
     (r/create-class
@@ -220,7 +212,9 @@
                          [:div
                           [:canvas#plot
                            {:width "600" :height "400"
-                            :on-click (fn [event] (canvas-click event (:canvas @graph)))}]])
+                            :on-click (fn [event] (canvas-click
+                                                    event
+                                                    @graph))}]])
 
        :component-did-mount (fn [comp]
                               (let [g (make-graph)]
