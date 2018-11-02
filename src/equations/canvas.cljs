@@ -103,7 +103,6 @@
                      (goog.object/get rect "top")
                      (:center-y graph))
                    (:scale-y graph))]
-    (js/console.log (:scale-y graph))
     (rf/dispatch
       [:click [x-coord y-coord]])))
 
