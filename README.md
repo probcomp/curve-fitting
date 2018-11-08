@@ -1,4 +1,4 @@
-## equations
+## curve-fitting
 
 Plot a number of exponential equations on a 2D plane. Let them fade out over time.
 
