@@ -1,0 +1,10 @@
+/out
+/target
+
+figwheel_server.log
+
+# https://clojure.org/reference/deps_and_cli#_directories
+/.cpcache
+
+# Compiled ClojureScript
+/resources/public/js
