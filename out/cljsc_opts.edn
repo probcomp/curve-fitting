@@ -1,0 +1,1 @@
+{:browser-repl true, :main curve-fitting.canvas, :output-to "out/main.js", :output-dir "out", :aot-cache true}
