@@ -5,6 +5,29 @@
 
 (enable-console-print!)
 
+(defn draw-x-axis [graph]
+  (let [ctx (.getContext (:canvas graph) "2d")
+        width (* (:scale-x graph) (:range-x graph))
+        center-y (:center-y graph)]
+    (set! (.-globalAlpha ctx) 1.0)
+    (.beginPath ctx)
+    (.moveTo ctx 0 center-y)
+    (.lineTo ctx width center-y)
+    (set! (.-strokeStyle ctx) "black")
+    (.stroke ctx)
+    ctx))
+
+(defn update-x-axis [graph]
+  (let [ctx (.getContext (:canvas graph) "2d")]
+    (set! (.-globalAlpha ctx) 1.0)
+    (.beginPath ctx)
+    (.moveTo ctx (:min-x graph) 0)
+    (.lineTo ctx (:max-x graph) 0)
+    (set! (.-strokeStyle ctx) "black")
+    (set! (.-lineWidth ctx) (/ 1 (:scale-x graph)))
+    (.stroke ctx)
+    ctx))
+
 (defn transform-context [ctx center-x center-y scale-x scale-y]
   (do
     (.translate ctx center-x center-y)
@@ -42,7 +65,7 @@
                                :max-y  10
                                :units-per-tick 1})
         ctx (.getContext (:canvas graph) "2d")]
-
+    (draw-x-axis graph)
     (set! (.-globalCompositeOperation ctx) "multiply")
     (assoc graph :context
            (transform-context ctx
@@ -211,7 +234,7 @@
                                              (:min-y   @graph)
                                              (:range-x @graph)
                                              (:range-y @graph))
-
+                                 (update-x-axis @graph)
                                  (run!
                                   #(add-equation!
                                     @graph
