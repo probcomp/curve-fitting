@@ -7,7 +7,7 @@
   reagent                    {:mvn/version "0.8.1"}
   re-frame                   {:mvn/version "0.10.6"}
   com.taoensso/sente         {:mvn/version "1.13.1"}
-
+  integrant                  {:mvn/version "0.7.0"}
   http-kit                   {:mvn/version "2.3.0"}
   ring                       {:mvn/version "1.7.1"}
   ring/ring-defaults         {:mvn/version "0.3.2"}
@@ -23,6 +23,7 @@
 
   :dev
   {:extra-deps
-   {figwheel-sidecar        {:mvn/version "0.5.15" :exclusions [com.google.javascript/closure-compiler]}
+   {figwheel-sidecar        {:mvn/version "0.5.15"
+                             :exclusions [com.google.javascript/closure-compiler]}
     cider/cider-nrepl       {:mvn/version "0.16.0"}
     com.cemerick/piggieback {:mvn/version "0.2.2"}}}}}

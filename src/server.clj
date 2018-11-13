@@ -10,7 +10,7 @@
    [taoensso.encore    :as encore :refer (have have?)]
    [taoensso.timbre    :as timbre :refer (tracef debugf infof warnf errorf)]
    [taoensso.sente     :as sente]
-
+   [integrant.core     :as ig]
    [org.httpkit.server :as http-kit]
    [taoensso.sente.server-adapters.http-kit :refer (get-sch-adapter)]))
 
@@ -22,10 +22,8 @@
 ;;;; Define our Sente channel socket (chsk) server
 
 (let [packer :edn
-
       chsk-server (sente/make-channel-socket-server!
                    (get-sch-adapter) {:packer packer})
-
       {:keys [ch-recv send-fn connected-uids
               ajax-post-fn ajax-get-or-ws-handshake-fn]} chsk-server]
 
@@ -133,20 +131,40 @@
   (let [port (or port 0) ; 0 => Choose any available port
         ring-handler (var main-ring-handler)
 
-        [port stop-fn]
-
-        (let [stop-fn (http-kit/run-server ring-handler {:port port})]
-          [(:local-port (meta stop-fn)) (fn [] (stop-fn :timeout 100))])
+        [port stop-fn] (let [stop-fn (http-kit/run-server ring-handler {:port port})]
+                         [(:local-port (meta stop-fn)) (fn [] (stop-fn :timeout 100))])
         uri (format "http://localhost:%s/" port)]
 
     (infof "Web server is running at `%s`" uri)
 
     (reset! web-server_ stop-fn)))
 
-(defn stop!  []  (stop-router!) (stop-web-server!) (reset! run-equation false))
-(defn start! [] (start-router!) (start-web-server! 3333) (start-equation-broadcaster!))
+(def config
+  {:adapter/http-kit {:port 3333, :handler (ig/ref :handler/equations)}
+   :handler/equations {}})
+
+(defmethod ig/init-key :adapter/http-kit [_ opts]
+  (let [handler (atom (delay (:handler opts)))
+        options (dissoc opts :handler)]
+    {:handler     handler
+     :stop-server (http-kit/run-server (fn [req] (@@handler req)) options)}))
+
+(defmethod ig/init-key :handler/equations [_ _]
+  main-ring-handler)
+
+(defmethod ig/halt-key! :adapter/http-kit [_ {:keys [stop-server]}]
+  (stop-server))
+
+(def system
+  (ig/init config))
+(ig/halt! system)
+
+(defn stop!  []  (stop-router!) (reset! run-equation false))
+(defn start! [] (start-router!) (start-equation-broadcaster!))
 
 (comment
+  (start-web-server! 3333)
+  (stop-web-server!)
   (start!)
   (stop!)
   )
