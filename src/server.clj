@@ -119,9 +119,6 @@
     (when ?reply-fn
       (?reply-fn {:umatched-event-as-echoed-from-from-server event}))))
 
-(defmethod -event-msg-handler :example/test-rapid-push
-  [ev-msg] (test-fast-server>user-pushes))
-
 (defmethod -event-msg-handler :example/toggle-broadcast
   [{:as ev-msg :keys [?reply-fn]}]
   (let [loop-enabled? (swap! broadcast-enabled?_ not)]
