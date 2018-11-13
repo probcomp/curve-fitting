@@ -1,9 +1,15 @@
 (ns equations.canvas
   (:require
    [reagent.core  :as r]
-   [re-frame.core :as rf]))
+   [re-frame.core :as rf]
+   [equations.channels :as channels]
+   [taoensso.encore :as encore :refer-macros (have have?)]
+   [taoensso.timbre :as timbre :refer-macros (tracef debugf infof warnf errorf)]
+   [taoensso.sente :as sente :refer (cb-success?)]
+   [cljs.core.async :refer [<!]])
+  (:require-macros
+   [cljs.core.async.macros :as asyncm :refer (go-loop)]))
 
-(enable-console-print!)
 
 (defn transform-context [ctx center-x center-y scale-x scale-y]
   (do
@@ -190,11 +196,21 @@
      [:div {:style {:padding "16px"}}
       [plot-outer]]]]])
 
+(def take-from-channel (atom true))
+(defn start-channel-listener! []
+  (go-loop []
+    (let [[a b c]     (<! channels/equation-channel)]
+      (.log js/console "Got some data " a  b c)
+      (rf/dispatch
+       ;; a * x^b + c
+       [:new-eq (fn [x] (+ (* a (.pow js/Math x b)) c))])
+      (recur)
+      )))
 
-(defn ^:export run
+
+(defn run
   []
   (rf/dispatch-sync [:initialize])
   (r/render [ui]
-            (js/document.getElementById "app")))
-
-(run)
+            (js/document.getElementById "app"))
+  (start-channel-listener!))

@@ -5,10 +5,23 @@
  {org.clojure/clojurescript  {:mvn/version "1.10.339"}
   binaryage/devtools         {:mvn/version "0.9.7"}
   reagent                    {:mvn/version "0.8.1"}
-  re-frame                   {:mvn/version "0.10.6"}}
+  re-frame                   {:mvn/version "0.10.6"}
+  com.taoensso/sente         {:mvn/version "1.13.1"}
+
+  http-kit                   {:mvn/version "2.3.0"}
+  ring                       {:mvn/version "1.7.1"}
+  ring/ring-defaults         {:mvn/version "0.3.2"}
+  compojure                  {:mvn/version "1.6.1"}
+  hiccup                     {:mvn/version "1.0.5"}}
 
  :aliases
- {:dev
+ {:server {:extra-deps {org.clojure/clojure {:mvn/version "1.9.0"}
+                        org.clojure/tools.trace {:mvn/version "0.7.9"}
+                        cider/cider-nrepl {:mvn/version "0.18.0"}}
+           :main-opts ["-m" "nrepl.cmdline" "--middleware"
+                       "[cider.nrepl/cider-middleware]"]}
+
+  :dev
   {:extra-deps
    {figwheel-sidecar        {:mvn/version "0.5.15" :exclusions [com.google.javascript/closure-compiler]}
     cider/cider-nrepl       {:mvn/version "0.16.0"}

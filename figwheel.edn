@@ -8,7 +8,7 @@
  {:dev {:figwheel     { }
         :source-paths ["src"]
         :compiler
-        {:main          "equations.canvas"
+        {:main          "equations.main"
          :output-dir    "resources/public/js/out"
          :output-to     "resources/public/js/out/canvas.js"
          :asset-path    "/js/out"
