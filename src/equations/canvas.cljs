@@ -48,6 +48,8 @@
                                :max-y  10
                                :units-per-tick 1})
         ctx (.getContext (:canvas graph) "2d")]
+
+    (set! (.-globalCompositeOperation ctx) "multiply")
     (assoc graph :context
            (transform-context ctx
                               (:center-x graph)
@@ -74,16 +76,45 @@
 
     ctx))
 
+(defn add-point! [graph coords]
+  (let [ctx (:context graph)
+        [x-coord y-coord] coords.tail]
+
+    (set! (.-globalAlpha ctx) 1.0)
+    (.beginPath ctx)
+    (.arc ctx x-coord y-coord (/ 3 (:scale-x graph)) 0 (* js/Math.PI 2) true)
+    (.fill ctx)
+    ctx))
+
 ;; events
 
 (rf/reg-event-db
   :initialize
   (fn [_ _]
     {:equations []
-     :animate false}))
+     :animate false
+     :points []}))
 
 (defn re-trigger-timer []
   (r/next-tick (fn [] (rf/dispatch [:timer]))))
+
+(defn convert-scales [event graph]
+  (let [rect (.getBoundingClientRect (:canvas graph))
+        x-pixel-val (-
+                     event.nativeEvent.clientX
+                     (goog.object/get rect "left"))
+        y-pixel-val (-
+                     event.nativeEvent.clientY
+                     (goog.object/get rect "top"))
+        x-data-val (/ (-
+                        x-pixel-val
+                        (:center-x graph))
+                      (:scale-x graph))
+        y-data-val (/ (-
+                        y-pixel-val
+                        (:center-y graph))
+                      (:scale-y graph))]
+    [x-data-val y-data-val]))
 
 (rf/reg-event-db
   :timer
@@ -100,6 +131,13 @@
  :new-eq
  (fn [db [_ eq]]
    (update-in db [:equations] conj {:equation eq :opacity 100})))
+
+(rf/reg-event-db
+  :click
+  (fn [db [_ coords]]
+    (let [x (first (goog.object/get coords "tail"))
+          y (second (goog.object/get coords "tail"))]
+      (update-in db [:points] conj [x y]))))
 
 (rf/reg-event-fx
  :toggle-animation
@@ -121,6 +159,11 @@
  :animate
  (fn [db _]
    (:animate db)))
+
+(rf/reg-sub
+  :points
+  (fn [db _]
+    (:points db)))
 
 ;; views
 
@@ -150,40 +193,51 @@
 ;; here.
 ;; [1] https://github.com/Day8/re-frame/blob/master/docs/Using-Stateful-JS-Components.md
 (defn plot-inner []
-  (let [graph      (atom nil)
-        update     (fn [comp]
-                     (let [{:keys [equations]} (r/props comp)
-                           canvas (:canvas @graph)]
-
-                       (.clearRect (:context @graph)
-                                   (:min-x   @graph)
-                                   (:min-y   @graph)
-                                   (:range-x @graph)
-                                   (:range-y @graph))
-
-                       (run!
-                        #(add-equation!
-                          @graph
-                          (:equation %)
-                          (:opacity %))
-                        equations)))]
+  (let [graph      (atom nil)]
 
     (r/create-class
       {:reagent-render (fn []
                          [:div
-                          [:canvas#plot {:width "600" :height "400"}]])
+                          [:canvas#plot
+                           {:width "600" :height "600"
+                            :on-click (fn [event] (rf/dispatch
+                                                    [:click (convert-scales
+                                                              event
+                                                              @graph)]))}]])
 
        :component-did-mount (fn [comp]
                               (let [g (make-graph)]
                                 (reset! graph g)))
 
-       :component-did-update update
+       :component-did-update (fn [comp]
+                               (let [{:keys [equations points]} (r/props comp)]
+
+                                 (.clearRect (:context @graph)
+                                             (:min-x   @graph)
+                                             (:min-y   @graph)
+                                             (:range-x @graph)
+                                             (:range-y @graph))
+
+                                 (run!
+                                  #(add-equation!
+                                    @graph
+                                    (:equation %)
+                                    (:opacity %))
+                                  equations)
+
+                                 (run!
+                                   #(add-point!
+                                     @graph
+                                     %)
+                                   points)))
        :display-name "plot-inner"})))
 
 (defn plot-outer []
-  (let [equations (rf/subscribe [:equations])]
+  (let [equations (rf/subscribe [:equations])
+        points (rf/subscribe [:points])]
     (fn []
-      [plot-inner {:equations @equations}])))
+      [plot-inner {:equations @equations
+                   :points @points}])))
 
 (defn ui
   []
