@@ -80,13 +80,12 @@
     (debugf "Equation loop already running")
     (do
       (reset! run-equation true)
-      (let [broadcast!
-            (fn []
-              (let [uids (:any @connected-uids)]
-                (doseq [uid uids]
-                  (chsk-send! uid [:equation/new {:a (- 2 (rand 4))
-                                                  :b (+ 1 (rand-int 3))
-                                                  :c (- 5 (rand 10))}]))))]
+      (let [broadcast! (fn []
+                         (let [uids (:any @connected-uids)]
+                           (doseq [uid uids]
+                             (chsk-send! uid [:equation/new {:a (- 2 (rand 4))
+                                                             :b (+ 1 (rand-int 3))
+                                                             :c (- 5 (rand 10))}]))))]
         (go-loop []
           (<! (async/timeout 500))
           (broadcast!)
