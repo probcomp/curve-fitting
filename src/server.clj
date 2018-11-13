@@ -73,11 +73,8 @@
   (ring.middleware.defaults/wrap-defaults
     ring-routes ring.middleware.defaults/site-defaults))
 
-(defonce broadcast-enabled?_ (atom true))
-
 (defn start-equation-broadcaster!
-  "As an example of server>user async pushes, setup a loop to broadcast an
-  event to all connected users every 10 seconds"
+  "Send a new equation to each connected client every 500ms"
   []
   (if (true? @run-equation)
     (debugf "Equation loop already running")
@@ -87,13 +84,11 @@
             (fn []
               (let [uids (:any @connected-uids)]
                 (doseq [uid uids]
-                  (debugf "Sending new equation to" uid)
                   (chsk-send! uid [:equation/new {:a (- 2 (rand 4))
                                                   :b (+ 1 (rand-int 3))
                                                   :c (- 5 (rand 10))}]))))]
         (go-loop []
           (<! (async/timeout 500))
-          (when @broadcast-enabled?_ (broadcast!))
           (when (true? @run-equation)
             (recur)))))))
 
@@ -119,13 +114,6 @@
     (when ?reply-fn
       (?reply-fn {:umatched-event-as-echoed-from-from-server event}))))
 
-(defmethod -event-msg-handler :example/toggle-broadcast
-  [{:as ev-msg :keys [?reply-fn]}]
-  (let [loop-enabled? (swap! broadcast-enabled?_ not)]
-    (?reply-fn loop-enabled?)))
-
-;; TODO Add your (defmethod -event-msg-handler <event-id> [ev-msg] <body>)s here...
-
 ;;;; Sente event router (our `event-msg-handler` loop)
 
 (defonce router_ (atom nil))
@@ -138,7 +126,7 @@
 
 ;;;; Init stuff
 
-(defonce    web-server_ (atom nil)) ; (fn stop [])
+(defonce    web-server_ (atom nil))
 (defn  stop-web-server! [] (when-let [stop-fn @web-server_] (stop-fn)))
 (defn start-web-server! [& [port]]
   (stop-web-server!)
