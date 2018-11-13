@@ -89,6 +89,7 @@
                                                   :c (- 5 (rand 10))}]))))]
         (go-loop []
           (<! (async/timeout 500))
+          (broadcast!)
           (when (true? @run-equation)
             (recur)))))))
 
