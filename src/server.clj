@@ -155,16 +155,20 @@
 (defmethod ig/halt-key! :adapter/http-kit [_ {:keys [stop-server]}]
   (stop-server))
 
-(def system
-  (ig/init config))
-(ig/halt! system)
 
 (defn stop!  []  (stop-router!) (reset! run-equation false))
 (defn start! [] (start-router!) (start-equation-broadcaster!))
 
 (comment
-  (start-web-server! 3333)
-  (stop-web-server!)
+  (def system
+    (ig/init config))
+  (ig/halt! system)
+
+
   (start!)
   (stop!)
+
+
+  (start-web-server! 3333)
+  (stop-web-server!)
   )
