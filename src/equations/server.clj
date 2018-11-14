@@ -1,6 +1,6 @@
 (ns equations.server
   (:require
-   [clojure.core.async :as async  :refer [<! <!! >! >!! put! chan go go-loop]]
+   [clojure.core.async :as async  :refer [<! <!! >! >!! alts! put! chan go go-loop]]
    [clojure.string :as str]
    [compojure.core :as compojure :refer [defroutes GET POST]]
    [compojure.route :as route]
@@ -14,7 +14,8 @@
    [taoensso.encore :as encore :refer [have have?]]
    [taoensso.sente :as sente]
    [taoensso.sente.server-adapters.http-kit :refer [get-sch-adapter]]
-   [taoensso.timbre :as timbre :refer [tracef debugf infof warnf errorf]]))
+   [taoensso.timbre :as timbre :refer [tracef debugf infof warnf errorf]]
+   [equations.curve :as curve]))
 
 (reset! sente/debug-mode?_ true) ; Uncomment for extra debug info
 
@@ -103,8 +104,10 @@
 (def config
   {:sente-socket-server {}
    :sente-router {:channelsocket (ig/ref :sente-socket-server)}
+   :sente-out-channel {:sente-socket-server (ig/ref :sente-socket-server)}
 
-   :channelsocket/equation-broadcaster {:channelsocket (ig/ref :sente-socket-server)}
+   :curve-generator {:sente-out-channel (ig/ref :sente-out-channel)
+                     :point-channel (ig/ref :point-channel)}
 
    :point-channel {}
    :point-handler {:channel (ig/ref :point-channel)}
@@ -170,6 +173,29 @@
   [key opts old-opts old-impl]
   old-impl)
 
+(defmethod ig/init-key :sente-out-channel
+  [_ {:keys [sente-socket-server]}]
+  (let [c (async/chan (async/dropping-buffer 1))
+        {:keys [connected-uids chsk-send!]} sente-socket-server]
+    (go-loop []
+      (let [x (<! c)]
+        (when (some? x)
+          (doseq [uid (:any @connected-uids)]
+            (chsk-send! uid x))
+          (recur))))
+    c))
+
+(defmethod ig/halt-key! :sente-out-channel
+  [_ stop-chan]
+  (async/close! stop-chan))
+
+(defmethod ig/suspend-key! :sente-out-channel
+  [_ _])
+
+(defmethod ig/resume-key :sente-out-channel
+  [_ _ _ old-impl]
+  old-impl)
+
 (defmethod ig/init-key :sente-router
   [_ {:keys [handler channelsocket]}]
   (sente/start-server-chsk-router!
@@ -183,3 +209,12 @@
 (defmethod ig/halt-key! :channelsocket/equation-broadcaster
   [_ {:keys [run-atom]}]
   (reset! run-atom false))
+
+
+(defmethod ig/init-key :curve-generator
+  [_ {:keys [sente-out-channel point-channel]}]
+  (curve/start-loop point-channel sente-out-channel))
+
+(defmethod ig/halt-key! :curve-generator
+  [_ stop-chan]
+  (async/close! stop-chan))
