@@ -1,24 +1,27 @@
 (ns equations.server
   (:require
-   [clojure.string     :as str]
-   [ring.middleware.defaults]
-   [ring.middleware.anti-forgery :as anti-forgery]
-   [compojure.core     :as comp :refer (routes defroutes GET POST)]
-   [compojure.route    :as route]
-   [hiccup.core        :as hiccup]
-   [clojure.core.async :as async  :refer (<! <!! >! >!! put! chan go go-loop)]
-   [taoensso.encore    :as encore :refer (have have?)]
-   [taoensso.timbre    :as timbre :refer (tracef debugf infof warnf errorf)]
-   [taoensso.sente     :as sente]
-   [integrant.core     :as ig]
+   [clojure.core.async :as async  :refer [<! <!! >! >!! put! chan go go-loop]]
+   [clojure.string :as str]
+   [compojure.core :as compojure :refer [defroutes GET POST]]
+   [compojure.route :as route]
+   [figwheel-sidecar.repl-api :as figwheel]
+   [hiccup.core :as hiccup]
+   [integrant.core :as ig]
    [org.httpkit.server :as http-kit]
-   [taoensso.sente.server-adapters.http-kit :refer (get-sch-adapter)]))
+   [ring.middleware.anti-forgery :as anti-forgery]
+   [ring.middleware.defaults :refer [wrap-defaults]]
+   [ring.middleware.format :refer [wrap-restful-format]]
+   [taoensso.encore :as encore :refer [have have?]]
+   [taoensso.sente :as sente]
+   [taoensso.sente.server-adapters.http-kit :refer [get-sch-adapter]]
+   [taoensso.timbre :as timbre :refer [tracef debugf infof warnf errorf]]))
 
 (reset! sente/debug-mode?_ true) ; Uncomment for extra debug info
 
 ;; Ring handlers, for normal HTTP activity
 
-(defn landing-pg-handler [ring-req]
+(defn landing-pg-handler
+  [ring-req]
   (hiccup/html
    [:head
     [:meta {:charset "utf-8"}]
@@ -37,15 +40,26 @@
      [:div {:id "app"}]]
     [:script {:src "js/out/canvas.js"}]]))
 
-(defn make-ring-handler [{:keys [ring-ajax-get-or-ws-handshake ring-ajax-post]}]
-  (let [ring-routes (routes
-                     (GET  "/"      ring-req (landing-pg-handler            ring-req))
-                     (GET  "/chsk"  ring-req (ring-ajax-get-or-ws-handshake ring-req))
-                     (POST "/chsk"  ring-req (ring-ajax-post                ring-req))
+(def points (atom []))
+
+(defn point-handler
+  [{:keys [params] :as request}]
+  (println "Got a point!" request)
+  (swap! points conj params)
+  {:status 200
+   :body "ok"})
+
+(defn make-ring-handler
+  [{:keys [ring-ajax-get-or-ws-handshake ring-ajax-post]}]
+  (let [wrapped-point-handler (wrap-restful-format point-handler)
+        ring-routes (compojure/routes
+                     (GET  "/"      request (landing-pg-handler request))
+                     (GET  "/chsk"  request (ring-ajax-get-or-ws-handshake request))
+                     (POST "/chsk"  request (ring-ajax-post request))
+                     (POST "/point" request (wrapped-point-handler request))
                      (route/resources "/")
                      (route/not-found "<h1>Page not found</h1>"))]
-    (ring.middleware.defaults/wrap-defaults
-     ring-routes ring.middleware.defaults/site-defaults)))
+    (wrap-defaults ring-routes ring.middleware.defaults/api-defaults)))
 
 ;; start the loop which streams equations to the client
 
@@ -56,7 +70,6 @@
         broadcast!  (fn []
                       (let [uids (:any @connected-uids-atom)]
                         (doseq [uid uids]
-                          (println "Hello uid" uid)
                           (chsk-send! uid [:equation/new {:a (- 2 (rand 4))
                                                           :b (+ 1 (rand-int 3))
                                                           :c (- 5 (rand 10))}]))))]
@@ -99,29 +112,33 @@
    :channelsocket/router {:channelsocket (ig/ref :channelsocket/channelsocket)
                           :handler (ig/ref :channelsocket/event-msg-handler)}
    :channelsocket/equation-broadcaster {:channelsocket (ig/ref :channelsocket/channelsocket)}
-
    :handler/equations {:channelsocket (ig/ref :channelsocket/channelsocket)}})
 
-(defmethod ig/init-key :handler/equations [_ {:keys [channelsocket]}]
+(defmethod ig/init-key :handler/equations
+  [_ {:keys [channelsocket]}]
   (make-ring-handler channelsocket))
 
-
-(defmethod ig/init-key :adapter/http-kit [_ opts]
+(defmethod ig/init-key :adapter/http-kit
+  [_ opts]
   (let [handler (atom (delay (:handler opts)))
         options (dissoc opts :handler)]
     {:handler     handler
      :stop-server (http-kit/run-server (fn [req] (@@handler req)) options)}))
 
-(defmethod ig/halt-key! :adapter/http-kit [_ {:keys [stop-server]}]
+(defmethod ig/halt-key! :adapter/http-kit
+  [_ {:keys [stop-server]}]
   (stop-server))
 
-(defmethod ig/suspend-key! :adapter/http-kit [_ opts]
+(defmethod ig/suspend-key! :adapter/http-kit
+  [_ opts]
   opts)
 
-(defmethod ig/resume-key :adapter/http-kit [key opts old-opts old-impl]
+(defmethod ig/resume-key :adapter/http-kit
+  [key opts old-opts old-impl]
   old-impl)
 
-(defmethod ig/init-key :channelsocket/channelsocket [_ opts]
+(defmethod ig/init-key :channelsocket/channelsocket
+  [_ opts]
   (let [chsk-server (sente/make-channel-socket-server!
                      (get-sch-adapter) {:packer :edn})
         {:keys [ch-recv send-fn connected-uids
@@ -130,40 +147,30 @@
      :ring-ajax-get-or-ws-handshake ajax-get-or-ws-handshake-fn
      :ch-chsk                       ch-recv ;; channelsocket receive channel
      :chsk-send!                    send-fn ;; channelsocket send fn
-     :connected-uids                connected-uids ;; Watchable, read-only atom
-     }))
+     :connected-uids                connected-uids})) ;; Watchable, read-only atom
 
-
-(defmethod ig/suspend-key! :channelsocket/channelsocket [_ opts]
+(defmethod ig/suspend-key! :channelsocket/channelsocket
+  [_ opts]
   opts)
 
-(defmethod ig/resume-key :channelsocket/channelsocket [key opts old-opts old-impl]
+(defmethod ig/resume-key :channelsocket/channelsocket
+  [key opts old-opts old-impl]
   old-impl)
 
-(defmethod ig/init-key :channelsocket/router [_ {:keys [handler channelsocket]}]
+(defmethod ig/init-key :channelsocket/router
+  [_ {:keys [handler channelsocket]}]
   (sente/start-server-chsk-router!
    (:ch-chsk channelsocket) handler))
 
-(defmethod ig/init-key :channelsocket/event-msg-handler [_ _]
+(defmethod ig/init-key :channelsocket/event-msg-handler
+  [_ _]
   event-msg-handler)
 
-(defmethod ig/init-key :channelsocket/equation-broadcaster [_ {:keys [channelsocket]}]
+(defmethod ig/init-key :channelsocket/equation-broadcaster
+  [_ {:keys [channelsocket]}]
   {:run-atom (start-equation-broadcaster! (:connected-uids channelsocket)
                                           (:chsk-send! channelsocket))})
 
-(defmethod ig/halt-key! :channelsocket/equation-broadcaster [_ {:keys [run-atom]}]
+(defmethod ig/halt-key! :channelsocket/equation-broadcaster
+  [_ {:keys [run-atom]}]
   (reset! run-atom false))
-
-(comment
-
-  (def system
-    (ig/init config))
-
-  (ig/suspend! system)
-
-  (def system
-    (ig/resume config system))
-
-  (ig/halt! system)
-
-  )

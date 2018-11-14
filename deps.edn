@@ -2,28 +2,36 @@
  ["src" "resources"]
 
  :deps
- {org.clojure/clojurescript  {:mvn/version "1.10.339"}
-  binaryage/devtools         {:mvn/version "0.9.7"}
-  reagent                    {:mvn/version "0.8.1"}
-  re-frame                   {:mvn/version "0.10.6"}
-  com.taoensso/sente         {:mvn/version "1.13.1"}
-  integrant                  {:mvn/version "0.7.0"}
-  http-kit                   {:mvn/version "2.3.0"}
-  ring                       {:mvn/version "1.7.1"}
-  ring/ring-defaults         {:mvn/version "0.3.2"}
-  compojure                  {:mvn/version "1.6.1"}
-  hiccup                     {:mvn/version "1.0.5"}}
+ {org.clojure/clojurescript {:mvn/version "1.10.339"}
+  com.cognitect/transit-clj {:mvn/version "0.8.313"}
+  binaryage/devtools        {:mvn/version "0.9.7"}
+  com.taoensso/sente        {:mvn/version "1.13.1"}
+  compojure                 {:mvn/version "1.6.1"}
+  day8.re-frame/http-fx     {:mvn/version "0.1.6"}
+  hiccup                    {:mvn/version "1.0.5"}
+  http-kit                  {:mvn/version "2.3.0"}
+  integrant                 {:mvn/version "0.7.0"}
+  re-frame                  {:mvn/version "0.10.6"}
+  reagent                   {:mvn/version "0.8.1"}
+  ring                      {:mvn/version "1.7.1"}
+  ring/ring-defaults        {:mvn/version "0.3.2"}
+  ring-middleware-format    {:mvn/version "0.7.2"}}
 
  :aliases
- {:server {:extra-deps {org.clojure/clojure {:mvn/version "1.9.0"}
+ {:server {:extra-deps {org.clojure/clojure     {:mvn/version "1.9.0"}
                         org.clojure/tools.trace {:mvn/version "0.7.9"}
-                        cider/cider-nrepl {:mvn/version "0.18.0"}}
-           :main-opts ["-m" "nrepl.cmdline" "--middleware"
-                       "[cider.nrepl/cider-middleware]"]}
+                        cider/cider-nrepl       {:mvn/version "0.18.0"}}}
 
-  :dev
-  {:extra-deps
-   {figwheel-sidecar        {:mvn/version "0.5.15"
-                             :exclusions [com.google.javascript/closure-compiler]}
-    cider/cider-nrepl       {:mvn/version "0.16.0"}
-    com.cemerick/piggieback {:mvn/version "0.2.2"}}}}}
+  :cider {:main-opts ["-m" "nrepl.cmdline" "--middleware"
+                      "[cider.nrepl/cider-middleware]"]}
+
+  :rebel {:extra-deps {com.bhauman/rebel-readline {:mvn/version "RELEASE"}}
+          :main-opts  ["-m" "rebel-readline.main"]}
+
+  :dev {:extra-paths ["dev"]
+        :extra-deps  {integrant/repl             {:mvn/version "0.3.1"}
+                      figwheel-sidecar           {:mvn/version "0.5.15"
+                                                  :exclusions  [com.google.javascript/closure-compiler]}
+                      cider/cider-nrepl          {:mvn/version "0.16.0"}
+                      com.cemerick/piggieback    {:mvn/version "0.2.2"}
+                      org.clojure/java.classpath {:mvn/version "0.3.0"}}}}}
