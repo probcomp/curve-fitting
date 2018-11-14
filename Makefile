@@ -1,3 +1,3 @@
 .PHONY: dev
 dev:
-	clojure -Adev\:server
+	clj -Adev\:server
