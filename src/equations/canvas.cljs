@@ -13,6 +13,52 @@
   (:require-macros
    [cljs.core.async.macros :as asyncm :refer [go-loop]]))
 
+(defn draw-x-axis [graph]
+  (let [ctx (.getContext (:canvas graph) "2d")
+        width (* (:scale-x graph) (:range-x graph))
+        center-y (:center-y graph)]
+    (set! (.-globalAlpha ctx) 1.0)
+    (.beginPath ctx)
+    (.moveTo ctx 0 center-y)
+    (.lineTo ctx width center-y)
+    (set! (.-strokeStyle ctx) "black")
+    (.stroke ctx)
+    ctx))
+
+(defn draw-y-axis [graph]
+  (let [ctx (.getContext (:canvas graph) "2d")
+        height (* (:scale-y graph) (:range-y graph))
+        center-x (:center-x graph)]
+    (set! (.-globalAlpha ctx) 1.0)
+    (.beginPath ctx)
+    (.moveTo ctx center-x 0)
+    (.lineTo ctx center-x height)
+    (set! (.-strokeStyle ctx) "black")
+    (.stroke ctx)
+    ctx))
+
+(defn update-x-axis [graph]
+  (let [ctx (.getContext (:canvas graph) "2d")]
+    (set! (.-globalAlpha ctx) 1.0)
+    (.beginPath ctx)
+    (.moveTo ctx (:min-x graph) 0)
+    (.lineTo ctx (:max-x graph) 0)
+    (set! (.-strokeStyle ctx) "black")
+    (set! (.-lineWidth ctx) (/ 1 (:scale-x graph)))
+    (.stroke ctx)
+    ctx))
+
+
+(defn update-y-axis [graph]
+  (let [ctx (.getContext (:canvas graph) "2d")]
+    (set! (.-globalAlpha ctx) 1.0)
+    (.beginPath ctx)
+    (.moveTo ctx 0 (:min-y graph))
+    (.lineTo ctx 0 (:max-y graph))
+    (set! (.-strokeStyle ctx) "black")
+    (set! (.-lineWidth ctx) (/ 1 (:scale-x graph)))
+    (.stroke ctx)
+    ctx))
 
 (defn transform-context
   [ctx center-x center-y scale-x scale-y]
@@ -52,7 +98,8 @@
                                :max-y  10
                                :units-per-tick 1})
         ctx (.getContext (:canvas graph) "2d")]
-
+    (draw-x-axis graph)
+    (draw-y-axis graph)
     (set! (.-globalCompositeOperation ctx) "multiply")
     (assoc graph :context
            (transform-context ctx
@@ -247,6 +294,9 @@
                       (:min-y   @graph)
                       (:range-x @graph)
                       (:range-y @graph))
+
+          (update-x-axis @graph)
+          (update-y-axis @graph)
 
           (run! #(add-equation! @graph (:equation %) (:opacity %))
                 equations)
