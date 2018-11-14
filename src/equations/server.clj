@@ -101,10 +101,9 @@
       {:status 500, :body "point channel closed"})))
 
 (def config
-  {:channelsocket/event-msg-handler {}
-   :sente-socket-server {}
-   :sente-router {:channelsocket (ig/ref :sente-socket-server)
-                          :handler (ig/ref :channelsocket/event-msg-handler)}
+  {:sente-socket-server {}
+   :sente-router {:channelsocket (ig/ref :sente-socket-server)}
+
    :channelsocket/equation-broadcaster {:channelsocket (ig/ref :sente-socket-server)}
 
    :point-channel {}
@@ -175,10 +174,6 @@
   [_ {:keys [handler channelsocket]}]
   (sente/start-server-chsk-router!
    (:ch-chsk channelsocket) handler))
-
-(defmethod ig/init-key :channelsocket/event-msg-handler
-  [_ _]
-  event-msg-handler)
 
 (defmethod ig/init-key :channelsocket/equation-broadcaster
   [_ {:keys [channelsocket]}]
