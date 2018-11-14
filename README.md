@@ -8,27 +8,17 @@ This example has two halves: the server (which creates equations to plot and sen
 
 #### server
 
-Start the server process with
+Launch a Clojure REPL and start automatic ClojureScript recompilation and hot reloading with:
 
     make server
 
-Connect to the nREPL at the port indicated in the console. Open `equations/server.clj` and eval the buffer. Start the server loop by evaluating this form in the comment block at the bottom of the file:
+Start the server by evaluating `(go)` at the REPL.
 
-    (def system
-        (ig/init config))
+Once you have made changes you can update the running process with `(reset)`.
 
-You can stop sending equations to the client (but maintain the websocket connection) by "suspending" the system: evaluate `(ig/suspend! system)`. Resume by evaluating:
+You can stop sending equations to the client (but maintain the websocket connection) by "suspending" the system with `(suspend)`. Resume with `(resume)`.
 
-    (def system
-        (ig/resume config system))
-
-You can completely shutdown the server by evaluating `(ig/halt! system)`. This will disconnect any clients.
-
-#### client
-
-In another shell, compile the client and start the figwheel server (which will push code changes to your running client):
-
-    make figwheel
+You can completely shutdown the server by evaluating `(halt)`. This will disconnect any clients.
 
 #### observe
 

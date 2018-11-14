@@ -1,5 +1,3 @@
-figwheel:
-	clojure -A\:dev dev/figwheel.clj
-
-server:
-	clojure -A\:server
+.PHONY: dev
+dev:
+	clojure -Adev\:server

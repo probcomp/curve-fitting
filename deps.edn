@@ -25,9 +25,6 @@
   :cider {:main-opts ["-m" "nrepl.cmdline" "--middleware"
                       "[cider.nrepl/cider-middleware]"]}
 
-  :rebel {:extra-deps {com.bhauman/rebel-readline {:mvn/version "RELEASE"}}
-          :main-opts  ["-m" "rebel-readline.main"]}
-
   :dev {:extra-paths ["dev"]
         :extra-deps  {integrant/repl             {:mvn/version "0.3.1"}
                       figwheel-sidecar           {:mvn/version "0.5.15"
