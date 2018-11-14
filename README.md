@@ -10,7 +10,7 @@ This example has two halves: the server (which creates equations to plot and sen
 
 Launch a Clojure REPL and start automatic ClojureScript recompilation and hot reloading with:
 
-    make server
+    make dev
 
 Start the server by evaluating `(go)` at the REPL.
 

@@ -40,27 +40,6 @@
      [:div {:id "app"}]]
     [:script {:src "js/out/canvas.js"}]]))
 
-(def points (atom []))
-
-(defn point-handler
-  [{:keys [params] :as request}]
-  (println "Got a point!" request)
-  (swap! points conj params)
-  {:status 200
-   :body "ok"})
-
-(defn make-ring-handler
-  [{:keys [ring-ajax-get-or-ws-handshake ring-ajax-post]}]
-  (let [wrapped-point-handler (wrap-restful-format point-handler)
-        ring-routes (compojure/routes
-                     (GET  "/"      request (landing-pg-handler request))
-                     (GET  "/chsk"  request (ring-ajax-get-or-ws-handshake request))
-                     (POST "/chsk"  request (ring-ajax-post request))
-                     (POST "/point" request (wrapped-point-handler request))
-                     (route/resources "/")
-                     (route/not-found "<h1>Page not found</h1>"))]
-    (wrap-defaults ring-routes ring.middleware.defaults/api-defaults)))
-
 ;; start the loop which streams equations to the client
 
 (defn start-equation-broadcaster!
@@ -105,42 +84,77 @@
 
 ;; integrant setup
 
+(defmethod ig/init-key :point-channel
+  [_ opts]
+  (async/chan (async/sliding-buffer 10)))
+
+(defmethod ig/halt-key! :point-channel
+  [_ channel]
+  (async/close! channel))
+
+(defmethod ig/init-key :point-handler
+  [_ {:keys [channel]}]
+  (fn point-handler
+    [{:keys [params] :as request}]
+    (if (put! channel params)
+      {:status 200, :body "ok"}
+      {:status 500, :body "point channel closed"})))
+
 (def config
-  {:adapter/http-kit {:port 3333, :handler (ig/ref :handler/equations)}
-   :channelsocket/event-msg-handler {}
-   :channelsocket/channelsocket {}
-   :channelsocket/router {:channelsocket (ig/ref :channelsocket/channelsocket)
+  {:channelsocket/event-msg-handler {}
+   :sente-socket-server {}
+   :sente-router {:channelsocket (ig/ref :sente-socket-server)
                           :handler (ig/ref :channelsocket/event-msg-handler)}
-   :channelsocket/equation-broadcaster {:channelsocket (ig/ref :channelsocket/channelsocket)}
-   :handler/equations {:channelsocket (ig/ref :channelsocket/channelsocket)}})
+   :channelsocket/equation-broadcaster {:channelsocket (ig/ref :sente-socket-server)}
 
-(defmethod ig/init-key :handler/equations
-  [_ {:keys [channelsocket]}]
-  (make-ring-handler channelsocket))
+   :point-channel {}
+   :point-handler {:channel (ig/ref :point-channel)}
+   :handler {:channelsocket (ig/ref :sente-socket-server)
+             :point-handler (ig/ref :point-handler)}
 
-(defmethod ig/init-key :adapter/http-kit
+   :web-server {:port 3333, :handler (ig/ref :handler)}})
+
+(defmethod ig/init-key :handler
+  [_ {:keys [point-handler channelsocket]}]
+  (let [{:keys [ring-ajax-get-or-ws-handshake ring-ajax-post]} channelsocket]
+    (let [wrapped-point-handler (wrap-restful-format point-handler)
+          ring-routes (compojure/routes
+                       (GET  "/"      request (landing-pg-handler request))
+                       (GET  "/chsk"  request (ring-ajax-get-or-ws-handshake request))
+                       (POST "/chsk"  request (ring-ajax-post request))
+                       (POST "/point" request (wrapped-point-handler request))
+                       (route/resources "/")
+                       (route/not-found "<h1>Page not found</h1>"))]
+      (wrap-defaults ring-routes ring.middleware.defaults/api-defaults))))
+
+(defmethod ig/init-key :web-server
   [_ opts]
   (let [handler (atom (delay (:handler opts)))
         options (dissoc opts :handler)]
     {:handler     handler
      :stop-server (http-kit/run-server (fn [req] (@@handler req)) options)}))
 
-(defmethod ig/halt-key! :adapter/http-kit
+(defmethod ig/halt-key! :web-server
   [_ {:keys [stop-server]}]
   (stop-server))
 
-(defmethod ig/suspend-key! :adapter/http-kit
-  [_ opts]
-  opts)
+(defmethod ig/suspend-key! :web-server
+  [_ {:keys [handler]}]
+  (reset! handler (promise)))
 
-(defmethod ig/resume-key :adapter/http-kit
+(defmethod ig/resume-key :web-server
   [key opts old-opts old-impl]
-  old-impl)
+  (if (= (dissoc opts :handler) (dissoc old-opts :handler))
+    (do (deliver @(:handler old-impl) (:handler opts))
+        old-impl)
+    (do (ig/halt-key! key old-impl)
+        (ig/init-key key opts))))
 
-(defmethod ig/init-key :channelsocket/channelsocket
-  [_ opts]
+(defmethod ig/init-key :sente-socket-server
+  [_ _]
   (let [chsk-server (sente/make-channel-socket-server!
-                     (get-sch-adapter) {:packer :edn})
+                     (get-sch-adapter)
+                     {:packer :edn})
         {:keys [ch-recv send-fn connected-uids
                 ajax-post-fn ajax-get-or-ws-handshake-fn]} chsk-server]
     {:ring-ajax-post                ajax-post-fn
@@ -149,15 +163,15 @@
      :chsk-send!                    send-fn ;; channelsocket send fn
      :connected-uids                connected-uids})) ;; Watchable, read-only atom
 
-(defmethod ig/suspend-key! :channelsocket/channelsocket
+(defmethod ig/suspend-key! :sente-socket-server
   [_ opts]
   opts)
 
-(defmethod ig/resume-key :channelsocket/channelsocket
+(defmethod ig/resume-key :sente-socket-server
   [key opts old-opts old-impl]
   old-impl)
 
-(defmethod ig/init-key :channelsocket/router
+(defmethod ig/init-key :sente-router
   [_ {:keys [handler channelsocket]}]
   (sente/start-server-chsk-router!
    (:ch-chsk channelsocket) handler))
