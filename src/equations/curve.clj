@@ -27,7 +27,7 @@
                        (some? x))
                   (= ch timeout-chan))
           (cond (= ch in-chan)
-                (println "got point" x)
+                (println "got message" x)
 
                 (= ch timeout-chan)
                 (do (println "timeout hit")

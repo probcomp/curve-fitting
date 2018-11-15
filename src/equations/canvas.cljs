@@ -144,6 +144,18 @@
    (update-in db [:equations] conj {:equation eq :opacity 100})))
 
 (rf/reg-event-fx
+ :rm-points
+ (fn [{:keys [db] :as cofx} _]
+   {:db (assoc-in db [:points] [])
+    :http-xhrio {:method          :delete
+                 :uri             "points"
+                 :timeout         8000
+                 :format          (ajax.transit/transit-request-format)
+                 :response-format (ajax.formats/raw-response-format)
+                 :on-success      [::rm-points-success]
+                 :on-failure      [::rm-points-failure]}}))
+
+(rf/reg-event-fx
  :click
  (fn [{:keys [db] :as cofx} [_ coords]]
    (let [x (first (goog.object/get coords "tail"))
@@ -157,6 +169,18 @@
                    :response-format (ajax.formats/raw-response-format)
                    :on-success      [::point-post-success]
                    :on-failure      [::point-post-failure]}})))
+
+(rf/reg-event-fx
+ ::rm-points-success
+ (fn [cofx [_ response]]
+   (js/console.debug "Removing points success:" response)
+   {}))
+
+(rf/reg-event-fx
+ ::rm-posts-failure
+ (fn [cofx [_ response]]
+   (js/console.error "Removing points failure:" response)
+   {}))
 
 (rf/reg-event-fx
  ::point-post-success
@@ -219,6 +243,13 @@
                   [:new-eq (fn [x] (+ (* a (.pow js/Math x b)) c))]))}
    "Add equation"])
 
+(defn remove-points-button
+  []
+  [:button
+   {:class "mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect"
+    :on-click #(rf/dispatch [:rm-points])}
+   "Remove Points"])
+
 ;; see [1] for an explanation. I'm not *sure* this pattern is required
 ;; here.
 ;; [1] https://github.com/Day8/re-frame/blob/master/docs/Using-Stateful-JS-Components.md
@@ -269,8 +300,9 @@
    [:div {:class "mdl-grid"}
     [:div {:class "mdl-cell--12-col"}
      [:div
+      [toggle-animation-button]
       [add-equation-button]
-      [toggle-animation-button]]
+      [remove-points-button]]
      [:div {:style {:padding "16px"}}
       [plot-outer]]]]])
 
