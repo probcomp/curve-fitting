@@ -235,8 +235,7 @@
   []
   [:button
    {:class "mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect"
-    :on-click #(let []
-                 (rf/dispatch [:rm-points]))}
+    :on-click #(rf/dispatch [:rm-points])}
    "Remove Points"])
 
 ;; see [1] for an explanation. I'm not *sure* this pattern is required
