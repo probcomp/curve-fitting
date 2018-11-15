@@ -103,7 +103,7 @@
  :initialize
  (fn [_ _]
    {:equations []
-    :animate false
+    :animate true
     :points []}))
 
 (defn re-trigger-timer []
@@ -211,6 +211,7 @@
  (fn [db _]
    (:points db)))
 
+;; views
 
 (defn remove-points-button
   []
@@ -236,6 +237,7 @@
       :component-did-mount
       (fn [comp]
         (let [g (make-graph)]
+          (re-trigger-timer)
           (reset! graph g)))
 
       :component-did-update
