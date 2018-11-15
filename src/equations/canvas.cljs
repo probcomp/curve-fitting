@@ -13,52 +13,41 @@
   (:require-macros
    [cljs.core.async.macros :as asyncm :refer [go-loop]]))
 
+(def axis-color "#40f0f0")
+(def quadrille-color "#d0f0f0")
 
-(defn draw-x-axis [graph]
+(defn draw-axes [graph]
   (let [ctx (.getContext (:canvas graph) "2d")
-        width (* (:scale-x graph) (:range-x graph))
-        center-y (:center-y graph)]
+        [minx maxx miny maxy] ((juxt :min-x :max-x :min-y :max-y) graph)]
     (set! (.-globalAlpha ctx) 1.0)
-    (.beginPath ctx)
-    (.moveTo ctx 0 center-y)
-    (.lineTo ctx width center-y)
-    (set! (.-strokeStyle ctx) "black")
-    (.stroke ctx)
-    ctx))
 
-(defn draw-y-axis [graph]
-  (let [ctx (.getContext (:canvas graph) "2d")
-        height (* (:scale-y graph) (:range-y graph))
-        center-x (:center-x graph)]
-    (set! (.-globalAlpha ctx) 1.0)
+    ;; quadrille
     (.beginPath ctx)
-    (.moveTo ctx center-x 0)
-    (.lineTo ctx center-x height)
-    (set! (.-strokeStyle ctx) "black")
+    (.setLineDash ctx [0.2 0.2])
+    (set! (.-strokeStyle ctx) quadrille-color)
+    (set! (.-lineWidth ctx) (/ 1 (:scale-x graph)))
+    (doseq [y (range miny maxy)]
+      (do
+        (.moveTo ctx minx y)
+        (.lineTo ctx maxx y)))
+    (doseq [x (range minx maxx)]
+      (do
+        (.moveTo ctx x miny)
+        (.lineTo ctx x maxy)))
     (.stroke ctx)
-    ctx))
+    (.setLineDash ctx [])
 
-(defn update-x-axis [graph]
-  (let [ctx (.getContext (:canvas graph) "2d")]
-    (set! (.-globalAlpha ctx) 1.0)
+    ;; axes
     (.beginPath ctx)
     (.moveTo ctx (:min-x graph) 0)
     (.lineTo ctx (:max-x graph) 0)
-    (set! (.-strokeStyle ctx) "black")
+    (.moveTo ctx 0 (:min-y graph))
+    (.lineTo ctx 0 (:max-y graph))
+    (set! (.-strokeStyle ctx) axis-color)
     (set! (.-lineWidth ctx) (/ 1 (:scale-x graph)))
     (.stroke ctx)
     ctx))
 
-(defn update-y-axis [graph]
-  (let [ctx (.getContext (:canvas graph) "2d")]
-    (set! (.-globalAlpha ctx) 1.0)
-    (.beginPath ctx)
-    (.moveTo ctx 0 (:min-y graph))
-    (.lineTo ctx 0 (:max-y graph))
-    (set! (.-strokeStyle ctx) "black")
-    (set! (.-lineWidth ctx) (/ 1 (:scale-x graph)))
-    (.stroke ctx)
-ctx))
 
 (defn transform-context
   [ctx center-x center-y scale-x scale-y]
@@ -99,8 +88,7 @@ ctx))
                                :units-per-tick 1})
         ctx (.getContext (:canvas graph) "2d")]
 
-    (draw-x-axis graph)
-    (draw-y-axis graph)
+
     (set! (.-globalCompositeOperation ctx) "multiply")
     (assoc graph :context
            (transform-context ctx
@@ -284,6 +272,7 @@ ctx))
       :component-did-mount
       (fn [comp]
         (let [g (make-graph)]
+          (draw-axes g)
           (reset! graph g)))
 
       :component-did-update
@@ -296,8 +285,7 @@ ctx))
                       (:range-x @graph)
                       (:range-y @graph))
 
-          (update-x-axis @graph)
-          (update-y-axis @graph)
+          (draw-axes @graph)
 
           (run! #(add-equation! @graph (:equation %) (:opacity %))
                 equations)
