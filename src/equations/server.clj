@@ -2,7 +2,7 @@
   (:require
    [clojure.core.async :as async  :refer [<! <!! >! >!! alts! put! chan go go-loop]]
    [clojure.string :as str]
-   [compojure.core :as compojure :refer [defroutes GET POST]]
+   [compojure.core :as compojure :refer [defroutes GET POST DELETE]]
    [compojure.route :as route]
    [figwheel-sidecar.repl-api :as figwheel]
    [hiccup.core :as hiccup]
@@ -97,7 +97,15 @@
   [_ {:keys [channel]}]
   (fn point-handler
     [{:keys [params] :as request}]
-    (if (put! channel params)
+    (if (put! channel [:new-point params])
+      {:status 200, :body "ok"}
+      {:status 500, :body "point channel closed"})))
+
+(defmethod ig/init-key :clear-points-handler
+  [_ {:keys [channel]}]
+  (fn clear-points-handler
+    [_]
+    (if (put! channel [:clear-points])
       {:status 200, :body "ok"}
       {:status 500, :body "point channel closed"})))
 
@@ -111,20 +119,24 @@
 
    :point-channel {}
    :point-handler {:channel (ig/ref :point-channel)}
+   :clear-points-handler {:channel (ig/ref :point-channel)}
    :handler {:channelsocket (ig/ref :sente-socket-server)
-             :point-handler (ig/ref :point-handler)}
+             :point-handler (ig/ref :point-handler)
+             :clear-points-handler (ig/ref :clear-points-handler)}
 
    :web-server {:port 3333, :handler (ig/ref :handler)}})
 
 (defmethod ig/init-key :handler
-  [_ {:keys [point-handler channelsocket]}]
+  [_ {:keys [point-handler channelsocket clear-points-handler]}]
   (let [{:keys [ring-ajax-get-or-ws-handshake ring-ajax-post]} channelsocket]
     (let [wrapped-point-handler (wrap-restful-format point-handler)
+          wrapped-clear-points-handler (wrap-restful-format clear-points-handler)
           ring-routes (compojure/routes
-                       (GET  "/"      request (landing-pg-handler request))
-                       (GET  "/chsk"  request (ring-ajax-get-or-ws-handshake request))
-                       (POST "/chsk"  request (ring-ajax-post request))
-                       (POST "/point" request (wrapped-point-handler request))
+                       (GET    "/"       request (landing-pg-handler request))
+                       (GET    "/chsk"   request (ring-ajax-get-or-ws-handshake request))
+                       (POST   "/chsk"   request (ring-ajax-post request))
+                       (POST   "/point"  request (wrapped-point-handler request))
+                       (DELETE "/points" request (wrapped-clear-points-handler request))
                        (route/resources "/")
                        (route/not-found "<h1>Page not found</h1>"))]
       (wrap-defaults ring-routes ring.middleware.defaults/api-defaults))))

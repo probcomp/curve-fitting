@@ -143,10 +143,17 @@
  (fn [db [_ eq]]
    (update-in db [:equations] conj {:equation eq :opacity 100})))
 
-(rf/reg-event-db
+(rf/reg-event-fx
  :rm-points
- (fn [db _]
-   (assoc-in db [:points] [])))
+ (fn [{:keys [db] :as cofx} _]
+   {:db (assoc-in db [:points] [])
+    :http-xhrio {:method          :delete
+                 :uri             "points"
+                 :timeout         8000
+                 :format          (ajax.transit/transit-request-format)
+                 :response-format (ajax.formats/raw-response-format)
+                 :on-success      [::rm-points-success]
+                 :on-failure      [::rm-points-failure]}}))
 
 (rf/reg-event-fx
  :click
@@ -162,6 +169,18 @@
                    :response-format (ajax.formats/raw-response-format)
                    :on-success      [::point-post-success]
                    :on-failure      [::point-post-failure]}})))
+
+(rf/reg-event-fx
+ ::rm-points-success
+ (fn [cofx [_ response]]
+   (js/console.debug "Removing points success:" response)
+   {}))
+
+(rf/reg-event-fx
+ ::rm-posts-failure
+ (fn [cofx [_ response]]
+   (js/console.error "Removing points failure:" response)
+   {}))
 
 (rf/reg-event-fx
  ::point-post-success
@@ -211,18 +230,6 @@
      {:class "mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect"
       :on-click #(rf/dispatch [:toggle-animation])}
      text]))
-
-(defn add-equation-button
-  []
-  [:button
-   {:class "mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect"
-    :on-click #(let [a (- 2 (rand 4))
-                     b (+ 1 (rand-int 3))
-                     c (- 5 (rand 10))]
-                 (rf/dispatch
-                  ;; a * x^b + c
-                  [:new-eq (fn [x] (+ (* a (.pow js/Math x b)) c))]))}
-   "Add equation"])
 
 (defn remove-points-button
   []
@@ -282,7 +289,6 @@
    [:div {:class "mdl-grid"}
     [:div {:class "mdl-cell--12-col"}
      [:div
-      [add-equation-button]
       [toggle-animation-button]
       [remove-points-button]]
      [:div {:style {:padding "16px"}}
