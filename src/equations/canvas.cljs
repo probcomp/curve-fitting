@@ -194,15 +194,6 @@
    (js/console.error "Point post failure:" response)
    {}))
 
-(rf/reg-event-fx
- :toggle-animation
- (fn [cofx _]
-   (let [db        (:db cofx)
-         animating (:animate db)
-         disp      (if animating [] [:timer])]
-     {:db       (assoc db :animate (not animating))
-      :dispatch disp})))
-
 ;; queries / subs
 
 (rf/reg-sub
@@ -220,16 +211,6 @@
  (fn [db _]
    (:points db)))
 
-;; views
-
-(defn toggle-animation-button
-  []
-  (let [animate? @(rf/subscribe [:animate])
-        text (if animate? "Stop animation" "Start animation")]
-    [:button
-     {:class "mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect"
-      :on-click #(rf/dispatch [:toggle-animation])}
-     text]))
 
 (defn remove-points-button
   []
@@ -288,7 +269,6 @@
    [:div {:class "mdl-grid"}
     [:div {:class "mdl-cell--12-col"}
      [:div
-      [toggle-animation-button]
       [remove-points-button]]
      [:div {:style {:padding "16px"}}
       [plot-outer]]]]])
