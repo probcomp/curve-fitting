@@ -231,18 +231,6 @@
       :on-click #(rf/dispatch [:toggle-animation])}
      text]))
 
-(defn add-equation-button
-  []
-  [:button
-   {:class "mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect"
-    :on-click #(let [a (- 2 (rand 4))
-                     b (+ 1 (rand-int 3))
-                     c (- 5 (rand 10))]
-                 (rf/dispatch
-                  ;; a * x^b + c
-                  [:new-eq (fn [x] (+ (* a (.pow js/Math x b)) c))]))}
-   "Add equation"])
-
 (defn remove-points-button
   []
   [:button
@@ -301,7 +289,6 @@
     [:div {:class "mdl-cell--12-col"}
      [:div
       [toggle-animation-button]
-      [add-equation-button]
       [remove-points-button]]
      [:div {:style {:padding "16px"}}
       [plot-outer]]]]])
