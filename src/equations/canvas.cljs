@@ -143,6 +143,11 @@
  (fn [db [_ eq]]
    (update-in db [:equations] conj {:equation eq :opacity 100})))
 
+(rf/reg-event-db
+ :rm-points
+ (fn [db _]
+   (assoc-in db [:points] [])))
+
 (rf/reg-event-fx
  :click
  (fn [{:keys [db] :as cofx} [_ coords]]
@@ -219,6 +224,14 @@
                   [:new-eq (fn [x] (+ (* a (.pow js/Math x b)) c))]))}
    "Add equation"])
 
+(defn remove-points-button
+  []
+  [:button
+   {:class "mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect"
+    :on-click #(let []
+                 (rf/dispatch [:rm-points]))}
+   "Remove Points"])
+
 ;; see [1] for an explanation. I'm not *sure* this pattern is required
 ;; here.
 ;; [1] https://github.com/Day8/re-frame/blob/master/docs/Using-Stateful-JS-Components.md
@@ -270,7 +283,8 @@
     [:div {:class "mdl-cell--12-col"}
      [:div
       [add-equation-button]
-      [toggle-animation-button]]
+      [toggle-animation-button]
+      [remove-points-button]]
      [:div {:style {:padding "16px"}}
       [plot-outer]]]]])
 
