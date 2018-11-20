@@ -33,20 +33,39 @@
   (gen [xs]
     (map (add-noise-to-curve (generate-curve)) xs)))
 
-(define xs '(-0.5 -0.3 0.1 0.2 0.5))
+(define tr (nth (infer :procedure curve-model
+                       :inputs [xs]
+                       :target-trace observations) 1))
 
-(define observations
-  {"map"
-   {0 {"gaussian" {:value 0.06}}, 1 {"gaussian" {:value 0.36}},
-    2 {"gaussian" {:value 0.62}}, 3 {"gaussian" {:value 0.68}},
-    4 {"gaussian" {:value 1.03}}}})
+(define get-coeffs-from-trace
+  (gen [tr]
+    (define degree
+      (trace-get
+       (trace-subtrace
+        tr
+        '(1 1 "generate-curve" 0 "degree" "uniform-sample"))))
 
-(print (infer :procedure curve-model
-               :inputs [xs]
-               :target-trace observations))
+    (define coeff-subtraces
+      (trace-subtrace
+       tr
+       '(1 1 "generate-curve" 1 "coeffs" "replicate" "map")))
 
-(map #(nth % 2)
-     (replicate 3
-                (gen [] (infer :procedure curve-model
-                               :inputs [xs]
-                               :target-trace observations))))
+    (map (gen [k] (trace-get
+                   (trace-subtrace
+                    coeff-subtraces
+                    (list k "f" "gaussian"))))
+         (trace-keys coeff-subtraces))))
+
+#_(
+
+  (define xs '(-0.5 -0.3 0.1 0.2 0.5))
+
+  (define observations
+    {"map"
+     {0 {"gaussian" {:value 0.06}}, 1 {"gaussian" {:value 0.36}},
+      2 {"gaussian" {:value 0.62}}, 3 {"gaussian" {:value 0.68}},
+      4 {"gaussian" {:value 1.03}}}})
+
+  (print (infer :procedure curve-model
+                :inputs [xs]
+                :target-trace observations)))
