@@ -52,7 +52,8 @@
   (let [[msg-type msg] ?data]
     (js/console.debug "Push event from server: %s" ?data)
     (case msg-type
-      :equation/new (put! channels/equation-channel ((juxt :a :b :c) msg)))))
+      :equation/new (put! channels/equation-channel
+                          ((juxt :degree :coeffs :score) msg)))))
 
 (defmethod -event-msg-handler :chsk/handshake
   [{:as ev-msg :keys [?data]}]
