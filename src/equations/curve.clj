@@ -30,7 +30,8 @@
 
 (defn start-loop
   [in-chan out-chan]
-  (let [stop-chan (async/chan)]
+  (let [stop-chan (async/chan)
+        points    (atom [])]
     (go-loop []
       (let [timeout-chan (async/timeout 500)
             [x ch] (alts! [in-chan timeout-chan stop-chan])]
@@ -45,12 +46,19 @@
         (when (or (and (= ch in-chan)
                        (some? x))
                   (= ch timeout-chan))
-          (cond (= ch in-chan)
-                (println "got message" x)
+          (cond (and (= ch in-chan)
+                     (= :new-point (first x)))
+                (let [{:keys [x y]} (second x)]
+                  (swap! points conj [x y]))
 
                 (= ch timeout-chan)
                 (do (println "timeout hit")
-                    (>! out-chan (random-equation))
-                    (println "wrote to out")))
+
+                    (>! out-chan [:equation/new
+                                  (new-polynomial
+                                   (map first @points)
+                                   (map second @points))])
+                    (println "wrote to out")
+                    points))
           (recur))))
     stop-chan))

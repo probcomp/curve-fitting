@@ -349,14 +349,13 @@
 
 (defn start-channel-listener! []
   (go-loop []
-    (let [[a b c] (<! channels/equation-channel)]
-      (js/console.debug "Received " a b c)
+    (let [[{:keys [degree coeffs score]}] (<! channels/equation-channel)]
+      (js/console.debug "Received " degree coeffs score)
       (rf/dispatch
-       ;; a * x^b + c
        [:new-eq (fn [x]
-                  (+ (* a
-                        (js/Math.pow x b))
-                     c))])
+                  (reduce + (fn [n] (* (nth coeffs n)
+                                       (js/Math.pow x n))))
+                  coeffs)])
       (recur))))
 
 (defn run

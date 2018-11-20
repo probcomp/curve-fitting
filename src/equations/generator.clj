@@ -33,9 +33,6 @@
   (gen [xs]
     (map (add-noise-to-curve (generate-curve)) xs)))
 
-(define tr (nth (infer :procedure curve-model
-                       :inputs [xs]
-                       :target-trace observations) 1))
 
 (define get-coeffs-from-trace
   (gen [tr]
@@ -57,6 +54,10 @@
          (trace-keys coeff-subtraces))))
 
 #_(
+
+   (define tr (nth (infer :procedure curve-model
+                          :inputs [xs]
+                          :target-trace observations) 1))
 
   (define xs '(-0.5 -0.3 0.1 0.2 0.5))
 
