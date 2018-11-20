@@ -21,12 +21,13 @@
                            :inputs [xs]
                            :target-trace (make-obs-trace obs))
         coeffs (generator/get-coeffs-from-trace tr)]
+    (println "score" score)
     {:degree (count coeffs)
      :coeffs coeffs
      :score score}))
 
-(print (new-polynomial [-1 -0.5 0 0.5 1]
-                       [0.2 0.4 0.6 0.8 1.0]))
+;; (print (new-polynomial [-1 -0.5 0 0.5 1]
+;;                        [0.2 0.4 0.6 0.8 1.0]))
 
 (defn start-loop
   [in-chan out-chan]

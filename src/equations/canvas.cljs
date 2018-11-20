@@ -98,7 +98,7 @@
                               (:scale-y graph)))))
 
 (defn add-equation!
-  [graph equation opacity]
+  [graph equation opacity score]
   (let [ctx (:context graph)]
 
     (set! (.-globalAlpha ctx) (/ opacity 100))
@@ -140,7 +140,8 @@
  (fn [_ _]
    {:equations []
     :animate false
-    :points []}))
+    :points []
+    :worst-score 0}))
 
 (defn re-trigger-timer []
   (r/next-tick (fn [] (rf/dispatch [:timer]))))
@@ -163,6 +164,17 @@
                       (:scale-y graph))]
     [x-data-val y-data-val]))
 
+(defn new-opacity [opacity score worst-score]
+  (let [slowest 0.1
+        fastest 10
+        score   (max worst-score score)
+        scaling (/ score worst-score) ;;  scaling is some number 0 - 1
+        speed (- fastest
+                 (* scaling
+                    (- fastest slowest)))]
+    (js/console.log "opacity" opacity "speed " speed)
+    (- opacity speed)))
+
 (rf/reg-event-db
  :timer
  (fn [db _]
@@ -170,14 +182,25 @@
      (do
        (re-trigger-timer)
        (assoc db
-              :equations (map #(update % :opacity (fn [op] (- op 7)))
-                              (filter #(> (:opacity %) 1) (:equations db)))))
+              :equations
+              (map
+               #(update % :opacity
+                        (fn [op] (new-opacity op
+                                              (:score %)
+                                              (:worst-score db))))
+               (filter #(> (:opacity %) 1) (:equations db)))))
      db)))
 
 (rf/reg-event-db
  :new-eq
- (fn [db [_ eq]]
-   (update-in db [:equations] conj {:equation eq :opacity 100})))
+ (fn [db [kw eq score]]
+   (-> db
+       (update-in [:equations]
+                  conj {:equation eq :opacity 100 :score score})
+
+       (assoc-in [:worst-score]
+                 (reduce min
+                         (map :score (:equations db)))))))
 
 (rf/reg-event-fx
  :rm-points
@@ -318,7 +341,10 @@
 
           (draw-axes @graph)
 
-          (run! #(add-equation! @graph (:equation %) (:opacity %))
+          (run! #(add-equation! @graph
+                                (:equation %)
+                                (:opacity %)
+                                (:score %))
                 equations)
 
           (run! #(add-point! @graph %)
@@ -349,21 +375,18 @@
 
 (defn start-channel-listener! []
   (go-loop []
-    (let [[degree coeffs score] (<! channels/equation-channel)
-          f0 ((fn [x]
-                (reduce + (map
-                           (fn [n] (* (nth coeffs n)
-                                      (js/Math.pow x n)))
-                           (range degree)))) 0)]
+    (let [[degree coeffs score] (<! channels/equation-channel)]
+
       (js/console.debug "Received %s %s %s" degree coeffs score)
 
-      (js/console.debug "f[0] = %s" f0)
       (rf/dispatch
-       [:new-eq (fn [x]
-                  (reduce + (map
-                             (fn [n] (* (nth coeffs n)
-                                        (js/Math.pow x n)))
-                             (range degree))))])
+       [:new-eq
+        (fn [x]
+          (reduce + (map
+                     (fn [n] (* (nth coeffs n)
+                                (js/Math.pow x n)))
+                     (range degree))))
+        score])
       (recur))))
 
 (defn run
