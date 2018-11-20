@@ -13,6 +13,41 @@
   (:require-macros
    [cljs.core.async.macros :as asyncm :refer [go-loop]]))
 
+(def axis-color "#40f0f0")
+(def quadrille-color "#d0f0f0")
+
+(defn draw-axes [graph]
+  (let [ctx (.getContext (:canvas graph) "2d")
+        [minx maxx miny maxy] ((juxt :min-x :max-x :min-y :max-y) graph)]
+    (set! (.-globalAlpha ctx) 1.0)
+
+    ;; quadrille
+    (.beginPath ctx)
+    (.setLineDash ctx [0.2 0.2])
+    (set! (.-strokeStyle ctx) quadrille-color)
+    (set! (.-lineWidth ctx) (/ 1 (:scale-x graph)))
+    (doseq [y (range miny maxy)]
+      (do
+        (.moveTo ctx minx y)
+        (.lineTo ctx maxx y)))
+    (doseq [x (range minx maxx)]
+      (do
+        (.moveTo ctx x miny)
+        (.lineTo ctx x maxy)))
+    (.stroke ctx)
+    (.setLineDash ctx [])
+
+    ;; axes
+    (.beginPath ctx)
+    (.moveTo ctx (:min-x graph) 0)
+    (.lineTo ctx (:max-x graph) 0)
+    (.moveTo ctx 0 (:min-y graph))
+    (.lineTo ctx 0 (:max-y graph))
+    (set! (.-strokeStyle ctx) axis-color)
+    (set! (.-lineWidth ctx) (/ 1 (:scale-x graph)))
+    (.stroke ctx)
+    ctx))
+
 
 (defn transform-context
   [ctx center-x center-y scale-x scale-y]
@@ -52,6 +87,7 @@
                                :max-y  10
                                :units-per-tick 1})
         ctx (.getContext (:canvas graph) "2d")]
+
 
     (set! (.-globalCompositeOperation ctx) "multiply")
     (assoc graph :context
@@ -267,6 +303,7 @@
       :component-did-mount
       (fn [comp]
         (let [g (make-graph)]
+          (draw-axes g)
           (reset! graph g)))
 
       :component-did-update
@@ -278,6 +315,8 @@
                       (:min-y   @graph)
                       (:range-x @graph)
                       (:range-y @graph))
+
+          (draw-axes @graph)
 
           (run! #(add-equation! @graph (:equation %) (:opacity %))
                 equations)
