@@ -15,7 +15,10 @@
   reagent                   {:mvn/version "0.8.1"}
   ring                      {:mvn/version "1.7.1"}
   ring/ring-defaults        {:mvn/version "0.3.2"}
-  ring-middleware-format    {:mvn/version "0.7.2"}}
+  ring-middleware-format    {:mvn/version "0.7.2"}
+  ;; org.clojure/math.numeric-tower {:mvn/version "0.0.4"}
+  probcomp/metaprob         {:git/url "https://github.com/probcomp/metaprob.git"
+                             :sha "f19a38f04aac20d8d75d6889c74b94aa0c3f6ee7"}}
 
  :aliases
  {:server {:extra-deps {org.clojure/clojure     {:mvn/version "1.9.0"}
