@@ -170,7 +170,7 @@
      (do
        (re-trigger-timer)
        (assoc db
-              :equations (map #(update % :opacity dec)
+              :equations (map #(update % :opacity (fn [op] (- op 7)))
                               (filter #(> (:opacity %) 1) (:equations db)))))
      db)))
 
@@ -349,13 +349,21 @@
 
 (defn start-channel-listener! []
   (go-loop []
-    (let [[degree coeffs score] (<! channels/equation-channel)]
+    (let [[degree coeffs score] (<! channels/equation-channel)
+          f0 ((fn [x]
+                (reduce + (map
+                           (fn [n] (* (nth coeffs n)
+                                      (js/Math.pow x n)))
+                           (range degree)))) 0)]
       (js/console.debug "Received %s %s %s" degree coeffs score)
+
+      (js/console.debug "f[0] = %s" f0)
       (rf/dispatch
        [:new-eq (fn [x]
-                  (reduce + (fn [n] (* (nth coeffs n)
-                                       (js/Math.pow x n)))
-                          coeffs))])
+                  (reduce + (map
+                             (fn [n] (* (nth coeffs n)
+                                        (js/Math.pow x n)))
+                             (range degree))))])
       (recur))))
 
 (defn run

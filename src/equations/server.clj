@@ -54,7 +54,7 @@
                                                           :b (+ 1 (rand-int 3))
                                                           :c (- 5 (rand 10))}]))))]
     (go-loop []
-      (<! (async/timeout 500))
+      (<! (async/timeout 100))
       (broadcast!)
       (when (true? @run-equation)
         (recur)))
