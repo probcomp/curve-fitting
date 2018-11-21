@@ -139,9 +139,10 @@
  :initialize
  (fn [_ _]
    {:equations []
-    :animate false
+    :animate true
     :points []
-    :worst-score 0}))
+    :worst-score 0
+    :best-score 0}))
 
 (defn re-trigger-timer []
   (r/next-tick (fn [] (rf/dispatch [:timer]))))
@@ -164,15 +165,19 @@
                       (:scale-y graph))]
     [x-data-val y-data-val]))
 
-(defn new-opacity [opacity score worst-score]
-  (let [slowest 0.1
-        fastest 10
-        score   (max worst-score score)
-        scaling (/ score worst-score) ;;  scaling is some number 0 - 1
-        speed (- fastest
-                 (* scaling
-                    (- fastest slowest)))]
-    (js/console.log "opacity" opacity "speed " speed)
+(defn new-opacity [opacity score worst best]
+  (let [slowest 1
+        fastest 8
+        score-range (- best worst) ;; range of scores
+        score-on-scale (- best score) ;; distance from best
+        score-scale (/ 1.0 score-range) ;; multiplier to scale a scale on the range to a value 0 - 1
+        scaled (* score-scale score-on-scale) ;; 0 - 1, low better
+        speed  (if (= 0 score-range)
+                 slowest
+                 (+ slowest
+                    (* scaled (- fastest slowest)))) ;; 1-10, low better
+        ]
+    (js/console.log "score" score "score-range" score-range "best" best "worst" worst "score-scale" score-scale "speed" speed)
     (- opacity speed)))
 
 (rf/reg-event-db
@@ -187,20 +192,27 @@
                #(update % :opacity
                         (fn [op] (new-opacity op
                                               (:score %)
-                                              (:worst-score db))))
+                                              (:worst-score db)
+                                              (:best-score db))))
                (filter #(> (:opacity %) 1) (:equations db)))))
      db)))
 
 (rf/reg-event-db
  :new-eq
  (fn [db [kw eq score]]
-   (-> db
-       (update-in [:equations]
+   (as-> db d
+       (update-in d [:equations]
                   conj {:equation eq :opacity 100 :score score})
 
-       (assoc-in [:worst-score]
-                 (reduce min
-                         (map :score (:equations db)))))))
+       (assoc-in d [:worst-score]
+                 (or (reduce min
+                             (map #(get % :score 0) (:equations d)))
+                     0))
+
+       (assoc-in d [:best-score]
+                 (or (reduce max
+                             (map #(get % :score 0) (:equations d)))
+                     0)))))
 
 (rf/reg-event-fx
  :rm-points
@@ -281,27 +293,6 @@
 
 ;; views
 
-(defn toggle-animation-button
-  []
-  (let [animate? @(rf/subscribe [:animate])
-        text (if animate? "Stop animation" "Start animation")]
-    [:button
-     {:class "mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect"
-      :on-click #(rf/dispatch [:toggle-animation])}
-     text]))
-
-(defn add-equation-button
-  []
-  [:button
-   {:class "mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect"
-    :on-click #(let [a (- 2 (rand 4))
-                     b (+ 1 (rand-int 3))
-                     c (- 5 (rand 10))]
-                 (rf/dispatch
-                  ;; a * x^b + c
-                  [:new-eq (fn [x] (+ (* a (.pow js/Math x b)) c))]))}
-   "Add equation"])
-
 (defn remove-points-button
   []
   [:button
@@ -327,6 +318,7 @@
       (fn [comp]
         (let [g (make-graph)]
           (draw-axes g)
+          (re-trigger-timer)
           (reset! graph g)))
 
       :component-did-update
@@ -365,8 +357,6 @@
    [:div {:class "mdl-grid"}
     [:div {:class "mdl-cell--12-col"}
      [:div
-      [toggle-animation-button]
-      [add-equation-button]
       [remove-points-button]]
      [:div {:style {:padding "16px"}}
       [plot-outer]]]]])

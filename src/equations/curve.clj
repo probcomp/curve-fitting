@@ -34,7 +34,7 @@
   (let [stop-chan (async/chan)
         points    (atom [])]
     (go-loop []
-      (let [timeout-chan (async/timeout 100)
+      (let [timeout-chan (async/timeout 200)
             [x ch] (alts! [in-chan timeout-chan stop-chan])]
         ;; recur
         ;; 5. in chan not nil
