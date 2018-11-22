@@ -108,9 +108,8 @@
   (when (seq curves)
     (quil/stroke-weight 2)
     (let [scores (sort (map :score curves))
-          score-opacity-scale (comp (scales/linear (range 5) [0 255])
-                                    (scales/quantile scores (range 5)))]
-      (def scores scores)
+          score-opacity-scale (comp (scales/linear (range 10) [0 255])
+                                    (scales/quantile scores (range 10)))]
       (doseq [{:keys [f score]} curves]
         (quil/stroke 0 (score-opacity-scale score))
         (draw-plot f x-pixel-min x-pixel-max 10)))))
