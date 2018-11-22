@@ -21,7 +21,7 @@
 
 (def point-pixel-radius 8)
 (def anti-aliasing 16)
-(def num-curves 20)
+(def num-curves 40)
 
 (def x-scale (scales/linear [0 pixel-width] [x-point-min x-point-max]))
 (def y-scale (scales/linear [pixel-height 0] [y-point-min y-point-max]))

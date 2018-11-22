@@ -9,4 +9,5 @@
                      :sha     "f19a38f04aac20d8d75d6889c74b94aa0c3f6ee7"}}
 
  :aliases
- {:dev {:extra-paths ["dev"]}}}
+ {:dev  {:extra-paths ["dev"]}
+  :prod {:extra-paths ["prod"]}}}
