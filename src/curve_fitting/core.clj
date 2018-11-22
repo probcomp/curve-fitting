@@ -142,8 +142,10 @@
         {:keys [points] :as new-state} (update state :points conj point)]
     (assoc new-state :curves (points-to-curves points))))
 
-(defn key-typed [{:keys [points] :as state} _]
-  (assoc state :curves (points-to-curves points)))
+(defn key-typed [{:keys [points] :as state} {:keys [raw-key]}]
+  (if (contains? #{\backspace} raw-key)
+    (init)
+    (assoc state :curves (points-to-curves points))))
 
 (defn settings
   []
