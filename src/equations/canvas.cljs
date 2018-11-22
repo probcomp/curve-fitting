@@ -15,6 +15,7 @@
 
 (def axis-color "#40f0f0")
 (def quadrille-color "#d0f0f0")
+  (def point-color "#f04040")
 
 (defn draw-axes [graph]
   (let [ctx (.getContext (:canvas graph) "2d")
@@ -121,8 +122,13 @@
         [x-coord y-coord] coords.tail]
 
     (set! (.-globalAlpha ctx) 1.0)
+
     (.beginPath ctx)
-    (.arc ctx x-coord y-coord (/ 3 (:scale-x graph)) 0 (* js/Math.PI 2) true)
+    (set! (.-fillStyle ctx) point-color)
+    (.arc ctx x-coord y-coord
+          (/ 3 (:scale-x graph))
+          0 (* js/Math.PI 2) true)
+
     (.fill ctx)
 
     ctx))
