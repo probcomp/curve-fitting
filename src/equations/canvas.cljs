@@ -144,9 +144,6 @@
     :worst-score 0
     :best-score 0}))
 
-;; (defn re-trigger-timer []
-;;   (r/next-tick (fn [] (rf/dispatch [:timer]))))
-
 (defn convert-scales [event graph]
   (let [rect (.getBoundingClientRect (:canvas graph))
         x-pixel-val (-
@@ -164,36 +161,6 @@
                        (:center-y graph))
                       (:scale-y graph))]
     [x-data-val y-data-val]))
-
-;; (defn new-opacity [opacity score worst best]
-;;   (let [slowest 1
-;;         fastest 8
-
-
-;;         speed  (if (= 0 score-range)
-;;                  slowest
-;;                  (+ slowest
-;;                     (* scaled (- fastest slowest)))) ;; 1-10, low better
-;;         ]
-;;     (js/console.log "score" score "score-range" score-range "best" best "worst" worst "score-scale" score-scale "speed" speed)
-;;     (- opacity speed)))
-
-;; (rf/reg-event-db
-;;  :timer
-;;  (fn [db _]
-;;    (if (:animate db)
-;;      (do
-;;        (re-trigger-timer)
-;;        (assoc db
-;;               :equations
-;;               (map
-;;                #(update % :opacity
-;;                         (fn [op] (new-opacity op
-;;                                               (:score %)
-;;                                               (:worst-score db)
-;;                                               (:best-score db))))
-;;                (filter #(> (:opacity %) 1) (:equations db)))))
-;;      db)))
 
 (rf/reg-event-db
  :new-eq
@@ -213,25 +180,37 @@
  :end-eqs
  (fn [db _]
    (let [worst (reduce min
-                       (map #(get % :score 0) (:equations-incoming db)))
-         best (reduce max
-                      (map #(get % :score 0) (:equations-incoming db)))
+                       (map #(get % :score 0)
+                            (:equations-incoming db)))
+
+         best (+ (reduce max
+                         (map #(get % :score 0)
+                              (:equations-incoming db))) 1)
+
          score-range (- best worst)
+         score-range-log (js/Math.log10 score-range)
+
          ;; multiplier to scale a score to 0-1
-         score-scale (/ 1.0 score-range)]
+         score-scale-log (/ 1.0 score-range-log)
+
+
+         ;; _ (doseq [[delta raw]
+         ;;           (map vector
+         ;;                (sort (map #(- best (get % :score 0))
+         ;;                           (:equations-incoming db)))
+         ;;                (reverse (sort (map #(get % :score 0)
+         ;;                                    (:equations-incoming db)))))]
+         ;;     (js/console.log "score:" raw "delta from best:" delta "log" (js/Math.log10 delta)))
+         ]
      (-> db
          (assoc-in [:equations]
                    (map (fn [e]
                           (let [score  (:score e)
                                 ;; distance from best
                                 score-on-scale (- best score)
-                                scaled (* score-scale score-on-scale)]
-                            (when (= score best)
-                              (js/console.log "Best! " score
-                                              (:degree e)))
-                            (when (= score worst)
-                              (js/console.log "Worst! " score
-                                              (:degree e)))
+                                score-on-scale-log (js/Math.log10 score-on-scale)
+                                scaled (* score-scale-log
+                                          score-on-scale-log)]
                             (assoc-in e [:opacity] (- 1 scaled))))
                         (:equations-incoming db)))
          (assoc-in [:equations-incoming] [])))))

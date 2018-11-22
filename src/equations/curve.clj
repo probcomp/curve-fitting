@@ -59,7 +59,7 @@
                 (= ch timeout-chan)
                 (do (println "timeout hit")
                     (>! out-chan [:equations/start])
-                    (dotimes [_ 100]
+                    (dotimes [_ 200]
                       (>! out-chan [:equation/new
                                     (new-polynomial
                                      (map first @points)
