@@ -106,7 +106,6 @@
 (defn draw-curves!
   [curves]
   (when (seq curves)
-    (quil/stroke-weight 2)
     (let [scores (sort (map :score curves))
           score-opacity-scale (scales/quantile scores [16 24 32 40 48 64 255])]
       (doseq [{:keys [f score]} curves]
