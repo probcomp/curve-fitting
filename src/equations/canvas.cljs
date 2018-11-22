@@ -100,7 +100,6 @@
 (defn add-equation!
   [graph equation opacity score]
   (let [ctx (:context graph)]
-    (.log js/console "Hello, opacity is" opacity)
     (set! (.-globalAlpha ctx) opacity)
     (.beginPath ctx)
     (.moveTo ctx (:min-x graph) (equation (:min-x graph)))
@@ -198,10 +197,12 @@
 
 (rf/reg-event-db
  :new-eq
- (fn [db [_ score eq]]
+ (fn [db [_ score degree coeffs eq]]
    (as-> db d
      (update-in d [:equations-incoming]
-                conj {:equation eq :opacity 100 :score score}))))
+                conj {:equation eq :opacity 100
+                      :score score :degree degree
+                      :coeffs coeffs}))))
 
 (rf/reg-event-db
  :start-eqs
@@ -216,7 +217,6 @@
          best (reduce max
                       (map #(get % :score 0) (:equations-incoming db)))
          score-range (- best worst)
-
          ;; multiplier to scale a score to 0-1
          score-scale (/ 1.0 score-range)]
      (-> db
@@ -224,12 +224,15 @@
                    (map (fn [e]
                           (let [score  (:score e)
                                 ;; distance from best
-
                                 score-on-scale (- best score)
-                                scaled (* score-scale score-on-scale)
-                                _ (.log js/console "score" score "scaled" scaled)
-                                ]
-                            (assoc-in e [:opacity] scaled)))
+                                scaled (* score-scale score-on-scale)]
+                            (when (= score best)
+                              (js/console.log "Best! " score
+                                              (:degree e)))
+                            (when (= score worst)
+                              (js/console.log "Worst! " score
+                                              (:degree e)))
+                            (assoc-in e [:opacity] (- 1 scaled))))
                         (:equations-incoming db)))
          (assoc-in [:equations-incoming] [])))))
 
@@ -284,14 +287,6 @@
    (js/console.error "Point post failure:" response)
    {}))
 
-;; (rf/reg-event-fx
-;;  :toggle-animation
-;;  (fn [cofx _]
-;;    (let [db        (:db cofx)
-;;          animating (:animate db)
-;;          disp      (if animating [] [:timer])]
-;;      {:db       (assoc db :animate (not animating))
-;;       :dispatch disp})))
 
 ;; queries / subs
 
@@ -393,6 +388,8 @@
                         (rf/dispatch
                          [:new-eq
                           score
+                          degree
+                          coeffs
                           (fn [x]
                             (reduce + (map
                                        (fn [n] (* (nth coeffs n)
