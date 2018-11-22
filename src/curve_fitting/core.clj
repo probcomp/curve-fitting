@@ -96,8 +96,8 @@
   (quil/no-stroke)
   (quil/fill 255 0 0 192) ; red
   (doseq [[point-x point-y] points]
-    (let [pixel-x (x-scale point-x)
-          pixel-y (y-scale point-y)]
+    (let [pixel-x (inverted-x-scale point-x)
+          pixel-y (inverted-y-scale point-y)]
       (quil/ellipse pixel-x
                     pixel-y
                     point-pixel-radius
@@ -137,8 +137,8 @@
           outputs)))
 
 (defn mouse-pressed [state {:keys [x y]}]
-  (let [point [(inverted-x-scale x)
-               (inverted-y-scale y)]
+  (let [point [(x-scale x)
+               (y-scale y)]
         {:keys [points] :as new-state} (update state :points conj point)]
     (assoc new-state :curves (points-to-curves points))))
 
