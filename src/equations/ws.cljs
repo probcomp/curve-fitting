@@ -50,10 +50,13 @@
 (defmethod -event-msg-handler :chsk/recv
   [{:as ev-msg :keys [?data]}]
   (let [[msg-type msg] ?data]
-    (js/console.debug "Push event from server: %s" ?data)
+    ;; (js/console.debug "Push event from server: %s" ?data)
     (case msg-type
       :equation/new (put! channels/equation-channel
-                          ((juxt :degree :coeffs :score) msg)))))
+                          [:new-equation ((juxt :degree :coeffs :score) msg)])
+      :equations/start (put! channels/equation-channel [:start-equations])
+      :equations/end (put! channels/equation-channel [:end-equations])
+      )))
 
 (defmethod -event-msg-handler :chsk/handshake
   [{:as ev-msg :keys [?data]}]

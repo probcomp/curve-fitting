@@ -34,7 +34,7 @@
   (let [stop-chan (async/chan)
         points    (atom [])]
     (go-loop []
-      (let [timeout-chan (async/timeout 200)
+      (let [timeout-chan (async/timeout 10000)
             [x ch] (alts! [in-chan timeout-chan stop-chan])]
         ;; recur
         ;; 5. in chan not nil
@@ -52,13 +52,19 @@
                 (let [{:keys [x y]} (second x)]
                   (swap! points conj [x y]))
 
+                (and (= ch in-chan)
+                     (= :clear-points (first x)))
+                (reset! points [])
+
                 (= ch timeout-chan)
                 (do (println "timeout hit")
-
-                    (>! out-chan [:equation/new
-                                  (new-polynomial
-                                   (map first @points)
-                                   (map second @points))])
+                    (>! out-chan [:equations/start])
+                    (dotimes [_ 100]
+                      (>! out-chan [:equation/new
+                                    (new-polynomial
+                                     (map first @points)
+                                     (map second @points))]))
+                    (>! out-chan [:equations/end])
                     (println "wrote to out")
                     points))
           (recur))))

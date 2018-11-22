@@ -51,7 +51,7 @@
                    (trace-subtrace
                     coeff-subtraces
                     (list k "f" "gaussian"))))
-         (trace-keys coeff-subtraces))))
+         (range degree))))
 
 #(
   (define xs '(-0.5 -0.3 0.1 0.2 0.5))

@@ -100,8 +100,8 @@
 (defn add-equation!
   [graph equation opacity score]
   (let [ctx (:context graph)]
-
-    (set! (.-globalAlpha ctx) (/ opacity 100))
+    (.log js/console "Hello, opacity is" opacity)
+    (set! (.-globalAlpha ctx) opacity)
     (.beginPath ctx)
     (.moveTo ctx (:min-x graph) (equation (:min-x graph)))
 
@@ -139,13 +139,14 @@
  :initialize
  (fn [_ _]
    {:equations []
+    :equations-incoming []
     :animate true
     :points []
     :worst-score 0
     :best-score 0}))
 
-(defn re-trigger-timer []
-  (r/next-tick (fn [] (rf/dispatch [:timer]))))
+;; (defn re-trigger-timer []
+;;   (r/next-tick (fn [] (rf/dispatch [:timer]))))
 
 (defn convert-scales [event graph]
   (let [rect (.getBoundingClientRect (:canvas graph))
@@ -165,54 +166,72 @@
                       (:scale-y graph))]
     [x-data-val y-data-val]))
 
-(defn new-opacity [opacity score worst best]
-  (let [slowest 1
-        fastest 8
-        score-range (- best worst) ;; range of scores
-        score-on-scale (- best score) ;; distance from best
-        score-scale (/ 1.0 score-range) ;; multiplier to scale a scale on the range to a value 0 - 1
-        scaled (* score-scale score-on-scale) ;; 0 - 1, low better
-        speed  (if (= 0 score-range)
-                 slowest
-                 (+ slowest
-                    (* scaled (- fastest slowest)))) ;; 1-10, low better
-        ]
-    (js/console.log "score" score "score-range" score-range "best" best "worst" worst "score-scale" score-scale "speed" speed)
-    (- opacity speed)))
+;; (defn new-opacity [opacity score worst best]
+;;   (let [slowest 1
+;;         fastest 8
 
-(rf/reg-event-db
- :timer
- (fn [db _]
-   (if (:animate db)
-     (do
-       (re-trigger-timer)
-       (assoc db
-              :equations
-              (map
-               #(update % :opacity
-                        (fn [op] (new-opacity op
-                                              (:score %)
-                                              (:worst-score db)
-                                              (:best-score db))))
-               (filter #(> (:opacity %) 1) (:equations db)))))
-     db)))
+
+;;         speed  (if (= 0 score-range)
+;;                  slowest
+;;                  (+ slowest
+;;                     (* scaled (- fastest slowest)))) ;; 1-10, low better
+;;         ]
+;;     (js/console.log "score" score "score-range" score-range "best" best "worst" worst "score-scale" score-scale "speed" speed)
+;;     (- opacity speed)))
+
+;; (rf/reg-event-db
+;;  :timer
+;;  (fn [db _]
+;;    (if (:animate db)
+;;      (do
+;;        (re-trigger-timer)
+;;        (assoc db
+;;               :equations
+;;               (map
+;;                #(update % :opacity
+;;                         (fn [op] (new-opacity op
+;;                                               (:score %)
+;;                                               (:worst-score db)
+;;                                               (:best-score db))))
+;;                (filter #(> (:opacity %) 1) (:equations db)))))
+;;      db)))
 
 (rf/reg-event-db
  :new-eq
- (fn [db [kw eq score]]
+ (fn [db [_ score eq]]
    (as-> db d
-       (update-in d [:equations]
-                  conj {:equation eq :opacity 100 :score score})
+     (update-in d [:equations-incoming]
+                conj {:equation eq :opacity 100 :score score}))))
 
-       (assoc-in d [:worst-score]
-                 (or (reduce min
-                             (map #(get % :score 0) (:equations d)))
-                     0))
+(rf/reg-event-db
+ :start-eqs
+ (fn [db _]
+   (assoc-in db [:equations] [])))
 
-       (assoc-in d [:best-score]
-                 (or (reduce max
-                             (map #(get % :score 0) (:equations d)))
-                     0)))))
+(rf/reg-event-db
+ :end-eqs
+ (fn [db _]
+   (let [worst (reduce min
+                       (map #(get % :score 0) (:equations-incoming db)))
+         best (reduce max
+                      (map #(get % :score 0) (:equations-incoming db)))
+         score-range (- best worst)
+
+         ;; multiplier to scale a score to 0-1
+         score-scale (/ 1.0 score-range)]
+     (-> db
+         (assoc-in [:equations]
+                   (map (fn [e]
+                          (let [score  (:score e)
+                                ;; distance from best
+
+                                score-on-scale (- best score)
+                                scaled (* score-scale score-on-scale)
+                                _ (.log js/console "score" score "scaled" scaled)
+                                ]
+                            (assoc-in e [:opacity] scaled)))
+                        (:equations-incoming db)))
+         (assoc-in [:equations-incoming] [])))))
 
 (rf/reg-event-fx
  :rm-points
@@ -265,14 +284,14 @@
    (js/console.error "Point post failure:" response)
    {}))
 
-(rf/reg-event-fx
- :toggle-animation
- (fn [cofx _]
-   (let [db        (:db cofx)
-         animating (:animate db)
-         disp      (if animating [] [:timer])]
-     {:db       (assoc db :animate (not animating))
-      :dispatch disp})))
+;; (rf/reg-event-fx
+;;  :toggle-animation
+;;  (fn [cofx _]
+;;    (let [db        (:db cofx)
+;;          animating (:animate db)
+;;          disp      (if animating [] [:timer])]
+;;      {:db       (assoc db :animate (not animating))
+;;       :dispatch disp})))
 
 ;; queries / subs
 
@@ -318,7 +337,7 @@
       (fn [comp]
         (let [g (make-graph)]
           (draw-axes g)
-          (re-trigger-timer)
+          ;; (re-trigger-timer)
           (reset! graph g)))
 
       :component-did-update
@@ -365,19 +384,21 @@
 
 (defn start-channel-listener! []
   (go-loop []
-    (let [[degree coeffs score] (<! channels/equation-channel)]
+    (let [[cmd & args] (<! channels/equation-channel)]
+      (case cmd
 
-      (js/console.debug "Received %s %s %s" degree coeffs score)
-
-      (rf/dispatch
-       [:new-eq
-        (fn [x]
-          (reduce + (map
-                     (fn [n] (* (nth coeffs n)
-                                (js/Math.pow x n)))
-                     (range degree))))
-        score])
-      (recur))))
+        :start-equations (rf/dispatch [:start-eqs])
+        :end-equations (rf/dispatch [:end-eqs])
+        :new-equation (let [[[degree coeffs score]] args]
+                        (rf/dispatch
+                         [:new-eq
+                          score
+                          (fn [x]
+                            (reduce + (map
+                                       (fn [n] (* (nth coeffs n)
+                                                  (js/Math.pow x n)))
+                                       (range degree))))]))))
+    (recur)))
 
 (defn run
   []
