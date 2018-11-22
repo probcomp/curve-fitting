@@ -23,14 +23,14 @@
 
     ;; quadrille
     (.beginPath ctx)
-    (.setLineDash ctx [0.2 0.2])
+    (.setLineDash ctx [(/ (- maxy miny 50)) (/ (- maxy miny 50))])
     (set! (.-strokeStyle ctx) quadrille-color)
     (set! (.-lineWidth ctx) (/ 1 (:scale-x graph)))
-    (doseq [y (range miny maxy)]
+    (doseq [y (range miny maxy (/ (- maxy miny) 10))]
       (do
         (.moveTo ctx minx y)
         (.lineTo ctx maxx y)))
-    (doseq [x (range minx maxx)]
+    (doseq [x (range minx maxx (/ (- maxx minx) 10))]
       (do
         (.moveTo ctx x miny)
         (.lineTo ctx x maxy)))
@@ -81,11 +81,10 @@
   []
   (let [canvas (.getElementById js/document "plot")
         graph  (add-relations {:canvas canvas
-                               :min-x -10
-                               :min-y -10
-                               :max-x  10
-                               :max-y  10
-                               :units-per-tick 1})
+                               :min-x -1
+                               :min-y -1
+                               :max-x  1
+                               :max-y  1})
         ctx (.getContext (:canvas graph) "2d")]
 
 
