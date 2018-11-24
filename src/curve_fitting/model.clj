@@ -31,7 +31,7 @@
 (define add-noise-to-curve
   (gen [curve]
     (gen [x]
-      (gaussian (generate-curve x)
+      (gaussian (curve x)
                 (if (outlier?) 0.1 400)))))
 
 (define curve-model
