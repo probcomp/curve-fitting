@@ -5,6 +5,7 @@
             [quil.core :as quil]
             [quil.middleware :as middleware]
             [curve-fitting.model :as model]
+            [curve-fitting.inference :as inference]
             [curve-fitting.scales :as scales]))
 
 (def pixel-width 500)
@@ -27,6 +28,8 @@
 (def y-scale (scales/linear [pixel-height 0] [y-point-min y-point-max]))
 (def inverted-x-scale (scales/invert x-scale))
 (def inverted-y-scale (scales/invert y-scale))
+
+(def particles 10)
 
 (defn degree
   "Returns the degree from a trace of `curve-fitting.model/curve-model`."
@@ -125,10 +128,12 @@
   (let [xs (map first points)
         ys (map second points)
         outputs (repeatedly num-curves
-                            #(interpreters/infer :procedure model/curve-model
-                                                 :inputs [xs]
-                                                 :target-trace (target-trace ys)))]
-    (mapv (fn [[_ trace score]]
+                            #(inference/importance-resampling
+                              model/curve-model
+                              [xs]
+                              (target-trace ys)
+                              particles))]
+    (mapv (fn [[trace score]]
             {:f (coefficient-function (coefficients trace))
              :score score})
           outputs)))
