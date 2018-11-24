@@ -109,12 +109,17 @@
 (defn draw-curves!
   [curves]
   (when (seq curves)
-    (let [scores (sort (map :score curves))
-          score-opacity-scale (scales/quantile scores [16 24 32 40 48 64 255])]
+    (let [curves (map (fn [curve]
+                        (update curve :score #(Math/exp %)))
+                      curves)
+          scores (map :score curves)
+          score-sum (reduce + scores)
+          score-opacity-scale (scales/linear [(apply min scores)
+                                              (apply max scores)]
+                                             [0 255])]
       (doseq [{:keys [f score]} curves]
         (quil/stroke 0 (score-opacity-scale score))
         (draw-plot f x-pixel-min x-pixel-max 10)))))
-
 
 (defn draw!
   "Draws the given state onto the current sketch."
