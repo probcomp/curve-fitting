@@ -1,25 +1,29 @@
-## curvefitting
+# Curve fitting
 
-Plot a number of exponential equations on a 2D plane. Let them fade out over time.
+A simple application demonstrating some of the capabilities of the [Metaprob probabilistic programming language](https://github.com/probcomp/metaprob).
 
-### run
+## Prerequisites
 
-This example has two halves: the server (which creates equations to plot and sends them to the client), and the client (which plots the equations in a browser).
+* The instructions below assume that you have the [Clojure command-line tools](https://clojure.org/guides/deps_and_cli) installed.
+* This application, [like Quil](https://github.com/quil/quil/issues/228), is not compatible with Java 9 or higher.
 
-#### server
+## Running
 
-Launch a Clojure REPL and start automatic ClojureScript recompilation and hot reloading with:
+Launch a Clojure REPL:
 
     make dev
 
 Start the server by evaluating `(go)` at the REPL.
 
-Once you have made changes you can update the running process with `(reset)`.
+Once you have made changes you can reload the visualization with `(reset)`.
 
-You can stop sending equations to the client (but maintain the websocket connection) by "suspending" the system with `(suspend)`. Resume with `(resume)`.
+You can close the visualization with`(halt)`.
 
-You can completely shutdown the server by evaluating `(halt)`. This will disconnect any clients.
+## Usage
 
-#### observe
+Once you are running the application you can place points by clicking anywhere in the window. The application will then sample polynomials from the prior and display them, shading each according to how likely it explains the clicked points.
 
-Visit `http://localhost:3333` in your browser. You should see plots starting to appear in the window. Click the `Animate` to start the "fade out" animation. Remember you can suspend the server to pause the stream of equations.
+### Keyboard shortcuts
+
+- `backspace` will clear the screen.
+- Any other key will refresh the curves.
