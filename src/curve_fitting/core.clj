@@ -21,15 +21,15 @@
 (def point-height (- y-point-max y-point-min))
 
 (def point-pixel-radius 8)
-(def anti-aliasing 16)
-(def num-curves 40)
+(def anti-aliasing 8)
+(def num-curves 10)
 
 (def x-scale (scales/linear [0 pixel-width] [x-point-min x-point-max]))
 (def y-scale (scales/linear [pixel-height 0] [y-point-min y-point-max]))
 (def inverted-x-scale (scales/invert x-scale))
 (def inverted-y-scale (scales/invert y-scale))
 
-(def particles 10)
+(def num-particles 150)
 
 (defn degree
   "Returns the degree from a trace of `curve-fitting.model/curve-model`."
