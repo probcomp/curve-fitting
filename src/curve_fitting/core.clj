@@ -65,7 +65,7 @@
 (defn init
   "Returns the initial state for the sketch."
   []
-  {:points []})
+  {:points [], :curves []})
 
 (defn draw-plot [f from to step]
   (quil/no-fill)
@@ -109,11 +109,25 @@
 
 (defn draw!
   "Draws the given state onto the current sketch."
-  [{:keys [points curves] :as state}]
-  (quil/background 255)
-  (let [opacity-scale (constantly 255)]
-    (draw-curves! curves opacity-scale))
-  (draw-clicked-points! points))
+  [state]
+  (fn [_]
+    (let [{:keys [points curves]} @state]
+      (quil/background 255)
+      (let [opacity-scale (constantly 255)]
+        (draw-curves! curves opacity-scale))
+      (draw-clicked-points! points))))
+
+(defn points-to-curve
+  [points]
+  (let [xs (map first points)
+        ys (map second points)]
+    (let [[trace score] (inference/importance-resampling
+                         model/curve-model
+                         [xs]
+                         (target-trace ys)
+                         num-particles)]
+      {:f (coefficient-function (coefficients trace))
+       :score score})))
 
 (defn points-to-curves
   [points]
@@ -131,28 +145,20 @@
     (mapv #(update % :score (fn [score] (/ score score-sum)))
           curves)))
 
-(defn mouse-pressed [state {:keys [x y]}]
-  (let [point [(x-scale x)
-               (y-scale y)]
-        {:keys [points] :as new-state} (update state :points conj point)]
-    (assoc new-state :curves (points-to-curves points))))
+(defn mouse-pressed
+  [state]
+  (fn [_ {:keys [x y]}]
+    (swap! state (fn [state]
+                   (-> state
+                       (update :points conj [(x-scale x) (y-scale y)])
+                       (assoc :curves []))))))
 
-(defn key-typed [{:keys [points] :as state} {:keys [raw-key]}]
-  (if (contains? #{\backspace} raw-key)
-    (init)
-    (assoc state :curves (points-to-curves points))))
+(defn key-typed
+  [state]
+  (fn [_ {:keys [raw-key]}]
+    (when (contains? #{\backspace} raw-key)
+      (reset! state (init)))))
 
 (defn settings
   []
   (quil/smooth anti-aliasing))
-
-(def sketch-config
-  {:size [pixel-width pixel-height]
-   :setup #'init
-   :draw #'draw!
-   :mouse-pressed #'mouse-pressed
-   :key-typed #'key-typed
-   :middleware [#'middleware/fun-mode]
-   ;; Why :no-bind-output is necessary: https://github.com/quil/quil/issues/216
-   :features [:keep-on-top :no-bind-output]
-   :settings #'settings})
