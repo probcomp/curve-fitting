@@ -156,8 +156,9 @@
 (defn key-typed
   [state]
   (fn [_ {:keys [raw-key]}]
-    (when (contains? #{\backspace} raw-key)
-      (reset! state (init)))))
+    (if (contains? #{\backspace} raw-key)
+      (reset! state (init))
+      (swap! state assoc :curves []))))
 
 (defn settings
   []
