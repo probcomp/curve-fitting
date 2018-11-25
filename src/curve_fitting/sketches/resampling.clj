@@ -13,5 +13,5 @@
                          [xs]
                          (trace/target-trace ys)
                          num-particles)]
-      {:f (trace/coefficient-function (trace/coefficients trace))
+      {:trace trace
        :score score})))
