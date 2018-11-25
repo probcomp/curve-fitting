@@ -87,6 +87,7 @@
          (reduce +))))
 
 (defn draw-clicked-points!
+  "Draws the given points onto the current sketch."
   [points]
   (quil/no-stroke)
   (quil/fill 255 0 0 192) ; red
