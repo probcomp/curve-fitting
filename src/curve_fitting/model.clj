@@ -14,6 +14,8 @@
    [metaprob.compositional :as comp]
    [metaprob.examples.gaussian :refer :all]))
 
+(def outliers-enabled false)
+
 (define generate-curve
   (gen []
     (define degree
@@ -24,9 +26,16 @@
       (reduce + (map (gen [n] (* (nth coeffs n) (expt x n)))
                      (range degree))))))
 
+(define outlier?
+  (gen []
+    (and outliers-enabled
+         (flip 0.1))))
+
 (define add-noise-to-curve
   (gen [curve]
-    (gen [x] (gaussian (curve x) 0.1))))
+    (gen [x]
+      (gaussian (curve x)
+                (if (outlier?) 400 0.1)))))
 
 (define curve-model
   (gen [xs]
