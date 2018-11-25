@@ -45,13 +45,13 @@
 
 (defn draw!
   "Draws the given state onto the current sketch."
-  [{:keys [points curves]} x-scale y-scale pixel-width]
+  [{:keys [points curves]} x-scale y-scale make-opacity-scale pixel-width]
   (let [inverted-x-scale (scales/invert x-scale)
         inverted-y-scale (scales/invert y-scale)
         x-pixel-max (int (/ pixel-width 2))
         x-pixel-min (* -1 x-pixel-max)]
     (quil/background 255)
-    (let [opacity-scale (constantly 255)]
+    (let [opacity-scale (make-opacity-scale (map :score curves))]
       (draw-curves! curves
                     inverted-x-scale
                     inverted-y-scale

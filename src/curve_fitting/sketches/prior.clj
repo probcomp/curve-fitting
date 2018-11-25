@@ -7,6 +7,7 @@
   [points]
   (let [xs (map first points)
         ys (map second points)]
+    (Thread/sleep 100)
     (let [[_ trace score]
           (interpreters/infer :procedure model/curve-model
                               :inputs [xs]

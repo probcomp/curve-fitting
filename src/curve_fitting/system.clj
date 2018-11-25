@@ -13,6 +13,7 @@
 (def config
   {:state {}
    :sketch {:state (integrant/ref :state)
+            :sketch-type :prior
 
             :x-point-min -10
             :x-point-max 10
@@ -47,14 +48,34 @@
   (atom (db/init)))
 
 (defmethod integrant/init-key :sketch
-  [_ {:keys [state pixel-width pixel-height x-point-min x-point-max y-point-min y-point-max num-particles]
+  [_ {:keys [state pixel-width pixel-height x-point-min x-point-max y-point-min y-point-max num-particles sketch-type]
       :as opts}]
   (let [x-scale (scales/linear [0 pixel-width] [x-point-min x-point-max])
-        y-scale (scales/linear [pixel-height 0] [y-point-min y-point-max])]
+        y-scale (scales/linear [pixel-height 0] [y-point-min y-point-max])
+        make-opacity-scale (case sketch-type
+                             :resampling (fn [scores]
+                                           (constantly 255))
+                             :prior (fn [scores]
+                                      (if-not (seq scores)
+                                        (constantly 255)
+                                        (let [exp-scores (map #(Math/exp %) scores)
+                                              exp-score-sum (reduce + exp-scores)
+                                              proportional-scores (map #(if (zero? exp-score-sum)
+                                                                          0
+                                                                          (/ % exp-score-sum))
+                                                                       exp-scores)
+                                              min-proportional (apply min proportional-scores)
+                                              max-proportional (apply max proportional-scores)]
+                                          (comp (scales/linear [min-proportional max-proportional]
+                                                               [0 255])
+                                                (fn [score]
+                                                  (/ (Math/exp score)
+                                                     exp-score-sum)))))))]
     (sketches/applet (merge (select-keys opts [:anti-aliasing :pixel-width :pixel-height])
                             {:state state
                              :x-scale x-scale
-                             :y-scale y-scale}))))
+                             :y-scale y-scale
+                             :make-opacity-scale make-opacity-scale}))))
 
 (defmethod integrant/halt-key! :sketch
   [_ sketch]
