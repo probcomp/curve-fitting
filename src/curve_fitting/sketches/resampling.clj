@@ -27,6 +27,4 @@
   [state {:keys [raw-key]}]
   (if (contains? #{\backspace} raw-key)
     (db/init)
-    (let [new-state (db/clear-curves state)]
-      (clojure.pprint/pprint new-state)
-      new-state)))
+    (db/clear-curves state)))
