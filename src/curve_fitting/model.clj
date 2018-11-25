@@ -14,7 +14,7 @@
    [metaprob.compositional :as comp]
    [metaprob.examples.gaussian :refer :all]))
 
-(def outliers-enabled false)
+(def outliers-enabled true)
 
 (define generate-curve
   (gen []
