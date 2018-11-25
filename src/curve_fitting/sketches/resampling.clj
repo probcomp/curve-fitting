@@ -19,9 +19,7 @@
 (defn mouse-pressed
   [state x-scale y-scale event]
   (let [{:keys [x y]} event]
-    (-> state
-        (db/add-point [(x-scale x) (y-scale y)])
-        (db/clear-curves))))
+    (db/add-point state [(x-scale x) (y-scale y)])))
 
 (defn key-typed
   [state {:keys [raw-key]}]

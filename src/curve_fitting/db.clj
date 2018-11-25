@@ -6,11 +6,6 @@
   []
   {:points [], :curves []})
 
-(defn add-point
-  "Adds a point to the sketch state."
-  [state point]
-  (update state :points conj point))
-
 (defn add-curve
   "Adds a curve to the sketch state."
   [state curve]
@@ -20,6 +15,13 @@
   "Removes all the curves from the sketch state."
   [state]
   (assoc state :curves []))
+
+(defn add-point
+  "Adds a point to the sketch state."
+  [state point]
+  (-> state
+      (update :points conj point)
+      (clear-curves)))
 
 (defn reset
   "Resets the sketch state to its initial value, clearing all points and curves."
