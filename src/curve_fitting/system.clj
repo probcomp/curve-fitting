@@ -11,12 +11,12 @@
 
 (defmethod integrant/init-key :engine
   [_ {:keys [state]}]
-  (let [stop? (promise)]
+  (let [stop? (atom false)]
     (dotimes [_ 4]
       (future
         (try
           (loop []
-            (when-not (realized? stop?)
+            (when-not @stop?
               (let [{old-points :points :as old-val} @state
                     curve (core/points-to-curve old-points)]
                 (swap! state (fn [{new-points :points :as new-val}]
@@ -33,7 +33,7 @@
 
 (defmethod integrant/halt-key! :engine
   [_ stop?]
-  (deliver stop? true))
+  (reset! stop? true))
 
 (defmethod integrant/init-key :state
   [_ props]
