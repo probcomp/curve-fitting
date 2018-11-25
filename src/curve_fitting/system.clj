@@ -7,6 +7,7 @@
             [curve-fitting.db :as db]
             [curve-fitting.scales :as scales]
             [curve-fitting.sketches :as sketches]
+            [curve-fitting.sketches.prior :as prior]
             [curve-fitting.sketches.resampling :as resampling]))
 
 (def config
@@ -24,13 +25,16 @@
 
             :anti-aliasing 8}
    :engine {:state (integrant/ref :state)
+            :sketch-type :prior
             :num-particles 150}})
 
 (defmethod integrant/init-key :engine
-  [_ {:keys [num-particles state]}]
+  [_ {:keys [state sketch-type num-particles]}]
   (let [stop? (atom false)]
     (dotimes [_ 4]
-      (sketches/sampling-thread stop? state #(resampling/sample-curve num-particles %))
+      (sketches/sampling-thread stop? state (case sketch-type
+                                              :resampling #(resampling/sample-curve % num-particles)
+                                              :prior      #(prior/sample-curve %)))
       (Thread/sleep 250))
     stop?))
 

@@ -5,7 +5,7 @@
             [curve-fitting.model.trace :as trace]))
 
 (defn sample-curve
-  [num-particles points]
+  [points num-particles]
   (let [xs (map first points)
         ys (map second points)]
     (let [[trace score] (inference/importance-resampling
