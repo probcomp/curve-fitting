@@ -62,15 +62,6 @@
                            {i {"gaussian" {:value y}}})
                          ys))})
 
-(defn pixel-to-point
-  [[pixel-x pixel-y]]
-  [(x-scale pixel-x) (y-scale pixel-y)])
-
-(defn point-to-pixel
-  [[x y]]
-  [(inverted-x-scale x)
-   (inverted-y-scale y)])
-
 (defn init
   "Returns the initial state for the sketch."
   []
@@ -82,7 +73,8 @@
   (doseq [[x y] (->> (range from to step)
                      (map (fn [x]
                             (let [y (f x)]
-                              (point-to-pixel [x y])))))]
+                              [(inverted-x-scale x)
+                               (inverted-y-scale y)]))))]
     (quil/curve-vertex x y))
   (quil/end-shape))
 
