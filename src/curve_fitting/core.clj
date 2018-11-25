@@ -100,41 +100,36 @@
                     point-pixel-radius))))
 
 (defn draw-curves!
-  [curves]
+  "Draws the provided curves onto the current sketch."
+  [curves opacity-scale]
   (when (seq curves)
-    (let [curves (map (fn [curve]
-                        (update curve :score #(Math/exp %)))
-                      curves)
-          scores (map :score curves)
-          score-sum (reduce + scores)
-          score-opacity-scale (scales/linear [(apply min scores)
-                                              (apply max scores)]
-                                             [0 255])]
-      (doseq [{:keys [f score]} curves]
-        (quil/stroke 0 (score-opacity-scale score))
-        (draw-plot f x-pixel-min x-pixel-max 10)))))
+    (doseq [{:keys [f score]} curves]
+      (quil/stroke 0 (opacity-scale score))
+      (draw-plot f x-pixel-min x-pixel-max 10))))
 
 (defn draw!
   "Draws the given state onto the current sketch."
   [{:keys [points curves] :as state}]
   (quil/background 255)
-  (draw-curves! curves)
+  (let [opacity-scale (constantly 255)]
+    (draw-curves! curves opacity-scale))
   (draw-clicked-points! points))
 
 (defn points-to-curves
   [points]
   (let [xs (map first points)
         ys (map second points)
-        outputs (repeatedly num-curves
-                            #(inference/importance-resampling
-                              model/curve-model
-                              [xs]
-                              (target-trace ys)
-                              particles))]
-    (mapv (fn [[trace score]]
-            {:f (coefficient-function (coefficients trace))
-             :score score})
-          outputs)))
+        curves (for [[trace score] (repeatedly num-curves
+                                               #(inference/importance-resampling
+                                                 model/curve-model
+                                                 [xs]
+                                                 (target-trace ys)
+                                                 num-particles))]
+                 {:f (coefficient-function (coefficients trace))
+                  :score (Math/exp score)})
+        score-sum (transduce (map :score) + curves)]
+    (mapv #(update % :score (fn [score] (/ score score-sum)))
+          curves)))
 
 (defn mouse-pressed [state {:keys [x y]}]
   (let [point [(x-scale x)
