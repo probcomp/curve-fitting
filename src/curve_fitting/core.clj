@@ -5,6 +5,7 @@
             [quil.core :as quil]
             [quil.middleware :as middleware]
             [curve-fitting.model :as model]
+            [curve-fitting.model.trace :as trace]
             [curve-fitting.inference :as inference]
             [curve-fitting.scales :as scales]))
 
@@ -39,9 +40,10 @@
   "Draws the provided curves onto the current sketch."
   [curves x-scale y-scale opacity-scale x-pixel-min x-pixel-max]
   (when (seq curves)
-    (doseq [{:keys [f score]} curves]
-      (quil/stroke 0 (opacity-scale score))
-      (draw-plot f x-pixel-min x-pixel-max 10 x-scale y-scale))))
+    (doseq [{:keys [trace score]} curves]
+      (let [f (trace/coefficient-function (trace/coefficients trace))]
+        (quil/stroke 0 (opacity-scale score))
+        (draw-plot f x-pixel-min x-pixel-max 10 x-scale y-scale)))))
 
 (defn draw!
   "Draws the given state onto the current sketch."
