@@ -11,5 +11,5 @@
           (interpreters/infer :procedure model/curve-model
                               :inputs [xs]
                               :target-trace (trace/target-trace ys))]
-      {:f (trace/coefficient-function (trace/coefficients trace))
+      {:trace trace
        :score score})))
