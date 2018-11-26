@@ -19,6 +19,24 @@
     trace
     '(1 1 "generate-curve" 0 "degree" "uniform-sample"))))
 
+(defn outliers
+  "Returns each trace's notion of 'outlierness' of each point"
+  [trace]
+  (let [outlier-subtraces (if (metaprob/trace-has-subtrace?
+                               trace
+                               '("map"))
+                            (metaprob/trace-subtrace
+                             trace
+                             '("map"))
+                            [])]
+    (map (fn [i]
+           (metaprob/trace-get
+            (metaprob/trace-subtrace
+             outlier-subtraces
+             (list i 2 "predicate" "outlier?" "then" "flip"))))
+         ;; XXX not sure we'll have `then` in all cases?
+         (range (count (metaprob/trace-keys outlier-subtraces))))))
+
 (defn coefficients
   "Returns the coefficients from a trace of the model."
   [trace]

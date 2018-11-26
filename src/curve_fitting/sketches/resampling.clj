@@ -13,5 +13,6 @@
                          [xs]
                          (trace/target-trace ys)
                          num-particles)]
+      ;;(pprint/pprint (trace/outliers trace))
       {:trace trace
        :score score})))
