@@ -6,7 +6,7 @@
   integrant         {:mvn/version "0.7.0"}
   integrant/repl    {:mvn/version "0.3.1"}
   probcomp/metaprob {:git/url "https://github.com/probcomp/metaprob"
-                     :sha     "f19a38f04aac20d8d75d6889c74b94aa0c3f6ee7"}}
+                     :sha     "f866d01a8dd5a9354809439912ee430623c4a5c6"}}
 
  :aliases
- {:dev  {:extra-paths ["dev"]}}}
+ {:dev {:extra-paths ["dev"]}}}
