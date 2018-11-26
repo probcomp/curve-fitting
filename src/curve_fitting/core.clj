@@ -25,16 +25,26 @@
 
 (defn draw-clicked-points!
   "Draws the given points onto the current sketch."
-  [points inverted-x-scale inverted-y-scale]
+  [points curves inverted-x-scale inverted-y-scale]
   (quil/no-stroke)
-  (quil/fill 255 0 0 192) ; red
-  (doseq [[point-x point-y] points]
-    (let [pixel-x (inverted-x-scale point-x)
-          pixel-y (inverted-y-scale point-y)]
-      (quil/ellipse pixel-x
-                    pixel-y
-                    point-pixel-radius
-                    point-pixel-radius))))
+
+  (let [trace-outliers (map trace/outliers (map :trace curves))
+        outlier-scores (if (empty? trace-outliers)
+                         (repeat (count points) 0)
+                         (map #(/ (count (filter true? %))
+                                  (count curves))
+                              (apply map vector trace-outliers)))]
+    (doseq [[[point-x point-y] outlier-score] (map list points
+                                                   outlier-scores)]
+      (let [red-value  (int (* 255 outlier-score))
+            blue-value (int (- 255 red-value))
+            pixel-x (inverted-x-scale point-x)
+            pixel-y (inverted-y-scale point-y)]
+        (quil/fill red-value 0 blue-value 192)
+        (quil/ellipse pixel-x
+                      pixel-y
+                      point-pixel-radius
+                      point-pixel-radius)))))
 
 (defn draw-curves!
   "Draws the provided curves onto the current sketch."
@@ -60,4 +70,4 @@
                     opacity-scale
                     x-pixel-min
                     x-pixel-max))
-    (draw-clicked-points! points inverted-x-scale inverted-y-scale)))
+    (draw-clicked-points! points curves inverted-x-scale inverted-y-scale)))
