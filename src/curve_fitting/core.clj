@@ -30,17 +30,17 @@
   [points curves inverted-x-scale inverted-y-scale]
   (quil/no-stroke)
 
-  (let [c (map :trace curves)
-        co (map trace/outliers c)
+  (let [trace-outliers (map trace/outliers (map :trace curves))
         outlier-scores (map #(/ (count (filter true? %))
-                                (count co))
-                            (apply map vector co))]
-    (pprint/pprint outlier-scores)
-
-    (quil/fill 255 0 0 192) ; red
-    (doseq [[point-x point-y] points]
-      (let [pixel-x (inverted-x-scale point-x)
+                                (count curves))
+                            (apply map vector trace-outliers))]
+    (doseq [[point-x point-y] points
+            outlier-score outlier-scores]
+      (let [red-value (int (* 255 outlier-score))
+            blue-value (int (- 255 red-value))
+            pixel-x (inverted-x-scale point-x)
             pixel-y (inverted-y-scale point-y)]
+        (quil/fill red-value 0 blue-value 192)
         (quil/ellipse pixel-x
                       pixel-y
                       point-pixel-radius
