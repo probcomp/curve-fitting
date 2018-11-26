@@ -61,6 +61,7 @@
   (let [curve-count (count curves)]
     (quil/rect-mode :corners)
     (quil/text-align :center)
+    (quil/fill 59 22 228)
     (quil/text
       (str "Curves:\n" curve-count)
       (- pixel-width 50) (- pixel-height 30) pixel-width pixel-height)))
