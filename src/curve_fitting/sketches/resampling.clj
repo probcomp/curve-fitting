@@ -2,8 +2,7 @@
   (:require [curve-fitting.db :as db]
             [curve-fitting.inference :as inference]
             [curve-fitting.model :as model]
-            [curve-fitting.model.trace :as trace]
-            [clojure.pprint :as pprint]))
+            [curve-fitting.model.trace :as trace]))
 
 (defn sample-curve
   [points num-particles]
@@ -14,6 +13,5 @@
                          [xs]
                          (trace/target-trace ys)
                          num-particles)]
-      ;; (pprint/pprint (trace/outliers trace))
       {:trace trace
        :score score})))

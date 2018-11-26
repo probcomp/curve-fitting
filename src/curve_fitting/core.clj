@@ -7,9 +7,7 @@
             [curve-fitting.model :as model]
             [curve-fitting.model.trace :as trace]
             [curve-fitting.inference :as inference]
-            [curve-fitting.scales :as scales]
-            [clojure.pprint :as pprint]
-            ))
+            [curve-fitting.scales :as scales]))
 
 (def point-pixel-radius 8)
 (def num-curves 10)
