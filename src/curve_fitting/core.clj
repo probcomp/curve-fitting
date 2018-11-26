@@ -30,7 +30,7 @@
 
   (let [trace-outliers (map trace/outliers (map :trace curves))
         outlier-scores (if (empty? trace-outliers)
-                         (repeat 0 (count curves))
+                         (repeat (count points) 0)
                          (map #(/ (count (filter true? %))
                                   (count curves))
                               (apply map vector trace-outliers)))]
