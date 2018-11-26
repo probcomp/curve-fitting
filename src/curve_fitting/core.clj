@@ -39,11 +39,10 @@
 (defn draw-curves!
   "Draws the provided curves onto the current sketch."
   [curves x-scale y-scale opacity-scale x-pixel-min x-pixel-max]
-  (when (seq curves)
-    (doseq [{:keys [trace score]} curves]
-      (let [f (trace/coefficient-function (trace/coefficients trace))]
-        (quil/stroke 0 (opacity-scale score))
-        (draw-plot f x-pixel-min x-pixel-max 10 x-scale y-scale)))))
+  (doseq [{:keys [trace log-score]} curves]
+    (let [f (trace/coefficient-function (trace/coefficients trace))]
+      (quil/stroke 0 (opacity-scale log-score))
+      (draw-plot f x-pixel-min x-pixel-max 10 x-scale y-scale))))
 
 (defn draw!
   "Draws the given state onto the current sketch."
@@ -53,11 +52,12 @@
         x-pixel-max (int (/ pixel-width 2))
         x-pixel-min (* -1 x-pixel-max)]
     (quil/background 255)
-    (let [opacity-scale (make-opacity-scale (map :score curves))]
-      (draw-curves! curves
-                    inverted-x-scale
-                    inverted-y-scale
-                    opacity-scale
-                    x-pixel-min
-                    x-pixel-max))
+    (when (seq curves)
+      (let [opacity-scale (make-opacity-scale (map :log-score curves))]
+        (draw-curves! curves
+                      inverted-x-scale
+                      inverted-y-scale
+                      opacity-scale
+                      x-pixel-min
+                      x-pixel-max)))
     (draw-clicked-points! points inverted-x-scale inverted-y-scale)))
