@@ -23,9 +23,32 @@
     (quil/curve-vertex x y))
   (quil/end-shape))
 
+(defn draw-point-selection!
+  [pixel-x pixel-y mouse-px mouse-py red-value blue-value]
+  (let [active-radius 10
+        circle-radius 10
+        distance (Math/sqrt (+ (Math/pow (- pixel-x mouse-px) 2)
+                               (Math/pow (- pixel-y mouse-py) 2)))]
+    (when (< distance active-radius)
+      (do
+        (defn draw-circle []
+          (quil/arc pixel-x
+                    pixel-y
+                    (* 2 circle-radius)
+                    (* 2 circle-radius)
+                    0
+                    (* 2 3.141)))
+        (quil/fill 0 0 0 0)
+        (quil/stroke-weight 4)
+        (quil/stroke 255 255 255 192)
+        (draw-circle)
+        (quil/stroke-weight 1)
+        (quil/stroke red-value 0 blue-value 192)
+        (draw-circle)))))
+
 (defn draw-clicked-points!
   "Draws the given points onto the current sketch."
-  [points curves inverted-x-scale inverted-y-scale]
+  [points curves [mouse-x mouse-y] inverted-x-scale inverted-y-scale]
   (quil/no-stroke)
 
   (let [trace-outliers (map trace/outliers (map :trace curves))
@@ -44,7 +67,11 @@
         (quil/ellipse pixel-x
                       pixel-y
                       point-pixel-radius
-                      point-pixel-radius)))))
+                      point-pixel-radius)
+        (draw-point-selection! pixel-x pixel-y
+                               (inverted-x-scale mouse-x)
+                               (inverted-y-scale mouse-y)
+                               red-value blue-value)))))
 
 (defn draw-curves!
   "Draws the provided curves onto the current sketch."
@@ -57,7 +84,7 @@
 
 (defn draw!
   "Draws the given state onto the current sketch."
-  [{:keys [points curves]} x-scale y-scale pixel-width]
+  [{:keys [points curves mouse-pos]} x-scale y-scale pixel-width]
   (let [inverted-x-scale (scales/invert x-scale)
         inverted-y-scale (scales/invert y-scale)
         x-pixel-max (int (/ pixel-width 2))
@@ -70,4 +97,4 @@
                     opacity-scale
                     x-pixel-min
                     x-pixel-max))
-    (draw-clicked-points! points curves inverted-x-scale inverted-y-scale)))
+    (draw-clicked-points! points curves mouse-pos inverted-x-scale inverted-y-scale)))

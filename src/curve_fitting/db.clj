@@ -23,6 +23,12 @@
       (update :points conj point)
       (clear-curves)))
 
+(defn mouse-pos
+  "Notes the current mouse position."
+  [state point]
+  (-> state
+      (assoc :mouse-pos point)))
+
 (defn reset
   "Resets the sketch state to its initial value, clearing all points and curves."
   [state]

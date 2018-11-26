@@ -10,6 +10,11 @@
   (let [{:keys [x y]} event]
     (db/add-point state [(x-scale x) (y-scale y)])))
 
+(defn mouse-moved
+  [state x-scale y-scale event]
+  (let [{:keys [x y]} event]
+    (db/mouse-pos state [(x-scale x) (y-scale y)])))
+
 (defn key-typed
   [state {:keys [raw-key]}]
   (if (contains? #{\backspace} raw-key)
@@ -21,6 +26,7 @@
   (applet/applet :size [pixel-width pixel-height]
                  :draw (fn [_] (core/draw! @state x-scale y-scale pixel-width))
                  :mouse-pressed (fn [_ event] (swap! state #(mouse-pressed % x-scale y-scale event)))
+                 :mouse-moved (fn [_ event] (swap! state #(mouse-moved % x-scale y-scale event)))
                  :key-typed (fn [_ event] (swap! state #(key-typed % event)))
                  ;; Why :no-bind-output is necessary: https://github.com/quil/quil/issues/216
                  :features [:keep-on-top :no-bind-output]
