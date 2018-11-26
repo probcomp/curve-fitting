@@ -55,14 +55,29 @@
         (quil/stroke 0 (opacity-scale score))
         (draw-plot f x-pixel-min x-pixel-max 10 x-scale y-scale)))))
 
+(defn draw-curve-count!
+  "Draws the number of curves in the bottom right-hand corner"
+  [curves pixel-width pixel-height]
+  (let [curve-count (count curves)]
+    (quil/rect-mode :corners)
+    (quil/text-align :right :bottom)
+    (quil/with-fill 0
+      (quil/text-size 14) ; pixels
+      (let [padding 5]
+        (quil/text
+         (str "curves: " curve-count)
+         (- pixel-width padding)
+         (- pixel-height padding))))))
+
 (defn draw!
   "Draws the given state onto the current sketch."
-  [{:keys [points curves]} x-scale y-scale pixel-width]
+  [{:keys [points curves]} x-scale y-scale pixel-width pixel-height]
   (let [inverted-x-scale (scales/invert x-scale)
         inverted-y-scale (scales/invert y-scale)
         x-pixel-max (int (/ pixel-width 2))
         x-pixel-min (* -1 x-pixel-max)]
     (quil/background 255)
+    (draw-curve-count! curves pixel-width pixel-height)
     (let [opacity-scale (constantly 255)]
       (draw-curves! curves
                     inverted-x-scale
