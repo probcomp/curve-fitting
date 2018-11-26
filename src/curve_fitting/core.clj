@@ -7,7 +7,9 @@
             [curve-fitting.model :as model]
             [curve-fitting.model.trace :as trace]
             [curve-fitting.inference :as inference]
-            [curve-fitting.scales :as scales]))
+            [curve-fitting.scales :as scales]
+            [clojure.pprint :as pprint]
+            ))
 
 (def point-pixel-radius 8)
 (def num-curves 10)
@@ -25,16 +27,24 @@
 
 (defn draw-clicked-points!
   "Draws the given points onto the current sketch."
-  [points inverted-x-scale inverted-y-scale]
+  [points curves inverted-x-scale inverted-y-scale]
   (quil/no-stroke)
-  (quil/fill 255 0 0 192) ; red
-  (doseq [[point-x point-y] points]
-    (let [pixel-x (inverted-x-scale point-x)
-          pixel-y (inverted-y-scale point-y)]
-      (quil/ellipse pixel-x
-                    pixel-y
-                    point-pixel-radius
-                    point-pixel-radius))))
+
+  (let [c (map :trace curves)
+        co (map trace/outliers c)
+        outlier-scores (map #(/ (count (filter true? %))
+                                (count co))
+                            (apply map vector co))]
+    (pprint/pprint outlier-scores)
+
+    (quil/fill 255 0 0 192) ; red
+    (doseq [[point-x point-y] points]
+      (let [pixel-x (inverted-x-scale point-x)
+            pixel-y (inverted-y-scale point-y)]
+        (quil/ellipse pixel-x
+                      pixel-y
+                      point-pixel-radius
+                      point-pixel-radius)))))
 
 (defn draw-curves!
   "Draws the provided curves onto the current sketch."
@@ -60,4 +70,4 @@
                     opacity-scale
                     x-pixel-min
                     x-pixel-max))
-    (draw-clicked-points! points inverted-x-scale inverted-y-scale)))
+    (draw-clicked-points! points curves inverted-x-scale inverted-y-scale)))
