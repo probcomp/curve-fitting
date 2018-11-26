@@ -29,12 +29,14 @@
   (quil/no-stroke)
 
   (let [trace-outliers (map trace/outliers (map :trace curves))
-        outlier-scores (map #(/ (count (filter true? %))
-                                (count curves))
-                            (apply map vector trace-outliers))]
-    (doseq [[point-x point-y] points
-            outlier-score outlier-scores]
-      (let [red-value (int (* 255 outlier-score))
+        outlier-scores (if (empty? trace-outliers)
+                         (repeat 0 (count curves))
+                         (map #(/ (count (filter true? %))
+                                  (count curves))
+                              (apply map vector trace-outliers)))]
+    (doseq [[[point-x point-y] outlier-score] (map list points
+                                                   outlier-scores)]
+      (let [red-value  (int (* 255 outlier-score))
             blue-value (int (- 255 red-value))
             pixel-x (inverted-x-scale point-x)
             pixel-y (inverted-y-scale point-y)]
