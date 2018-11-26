@@ -60,11 +60,14 @@
   [curves pixel-width pixel-height]
   (let [curve-count (count curves)]
     (quil/rect-mode :corners)
-    (quil/text-align :center)
-    (quil/fill 59 22 228)
-    (quil/text
-      (str "Curves:\n" curve-count)
-      (- pixel-width 50) (- pixel-height 30) pixel-width pixel-height)))
+    (quil/text-align :right :bottom)
+    (quil/with-fill 0
+      (quil/text-size 14) ; pixels
+      (let [padding 5]
+        (quil/text
+         (str "curves: " curve-count)
+         (- pixel-width padding)
+         (- pixel-height padding))))))
 
 (defn draw!
   "Draws the given state onto the current sketch."
