@@ -11,6 +11,12 @@
                            {i {"gaussian" {:value y}}})
                          ys))})
 
+(defn outlier-target-trace
+  "Given a list of indexes, fix the points at those indexes outliers or inliers"
+  [mode i]
+  (let [tf (if (= mode :inlier) false true)]
+    (assoc-in {} [i 2 "predicate" "outlier?" "then" "flip"] tf)))
+
 (defn degree
   "Returns the degree from a trace of the model."
   [trace]
