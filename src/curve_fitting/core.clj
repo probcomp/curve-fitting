@@ -44,12 +44,11 @@
             blue-value (int (- 255 red-value))
             pixel-x (inverted-x-scale point-x)
             pixel-y (inverted-y-scale point-y)]
-        (q-util/draw-point-borders pixel-x pixel-y point-pixel-radius)
-        (quil/fill red-value 0 blue-value 255)
-        (quil/ellipse pixel-x
-                      pixel-y
-                      point-pixel-radius
-                      point-pixel-radius)))))
+        (q-util/draw-point! pixel-x
+                            pixel-y
+                            point-pixel-radius
+                            red-value
+                            blue-value)))))
 
 (defn draw-curves!
   "Draws the provided curves onto the current sketch."

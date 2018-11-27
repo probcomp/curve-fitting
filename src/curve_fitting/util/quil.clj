@@ -9,3 +9,13 @@
   (quil/fill 255 255 255 255)
   (quil/ellipse
    pixel-x pixel-y (+ 2 point-pixel-radius) (+ 2 point-pixel-radius)))
+
+(defn draw-point!
+  "Draws a point and its corresponding white border."
+  [pixel-x pixel-y point-pixel-radius red-value blue-value]
+  (draw-point-borders pixel-x pixel-y point-pixel-radius)
+  (quil/fill red-value 0 blue-value 255)
+  (quil/ellipse pixel-x
+                pixel-y
+                point-pixel-radius
+                point-pixel-radius))
