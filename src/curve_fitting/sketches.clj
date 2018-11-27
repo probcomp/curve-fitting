@@ -17,9 +17,9 @@
     (db/clear-curves state)))
 
 (defn applet
-  [{:keys [anti-aliasing state pixel-width pixel-height x-scale y-scale]}]
+  [{:keys [anti-aliasing state pixel-width pixel-height x-scale y-scale make-opacity-scale]}]
   (applet/applet :size [pixel-width pixel-height]
-                 :draw (fn [_] (core/draw! @state x-scale y-scale pixel-width pixel-height))
+                 :draw (fn [_] (core/draw! @state x-scale y-scale pixel-width pixel-height make-opacity-scale))
                  :mouse-pressed (fn [_ event] (swap! state #(mouse-pressed % x-scale y-scale event)))
                  :key-typed (fn [_ event] (swap! state #(key-typed % event)))
                  ;; Why :no-bind-output is necessary: https://github.com/quil/quil/issues/216

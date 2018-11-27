@@ -14,4 +14,9 @@
                          (trace/target-trace ys)
                          num-particles)]
       {:trace trace
-       :score score})))
+       :score (Math/exp score)})))
+
+(defn make-opacity-scale
+  "Returns `255` regardless of input. All curves are at full opacity."
+  [scores]
+  (constantly 255))
