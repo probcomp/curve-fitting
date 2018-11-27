@@ -40,7 +40,7 @@
             blue-value (int (- 255 red-value))
             pixel-x (inverted-x-scale point-x)
             pixel-y (inverted-y-scale point-y)]
-        (quil/fill red-value 0 blue-value 127)
+        (quil/fill red-value 0 blue-value 255)
         (quil/ellipse pixel-x
                       pixel-y
                       point-pixel-radius
