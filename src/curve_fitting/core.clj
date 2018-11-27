@@ -53,7 +53,7 @@
 
   (let [trace-outliers (map trace/outliers (map :trace curves))
         outlier-scores (if (empty? trace-outliers)
-                         (repeat 0 (count curves))
+                         (repeat (count points) 0)
                          (map #(/ (count (filter true? %))
                                   (count curves))
                               (apply map vector trace-outliers)))]
@@ -71,30 +71,46 @@
         (draw-point-selection! pixel-x pixel-y
                                (inverted-x-scale mouse-x)
                                (inverted-y-scale mouse-y)
-                               red-value blue-value)))))
+                               red-value blue-value)
+        (quil/fill red-value 0 blue-value 255)))))
 
 (defn draw-curves!
   "Draws the provided curves onto the current sketch."
   [curves x-scale y-scale opacity-scale x-pixel-min x-pixel-max]
-  (when (seq curves)
-    (doseq [{:keys [trace score]} curves]
-      (let [f (trace/coefficient-function (trace/coefficients trace))]
-        (quil/stroke 0 (opacity-scale score))
-        (draw-plot f x-pixel-min x-pixel-max 10 x-scale y-scale)))))
+  (doseq [{:keys [trace log-score]} curves]
+    (let [f (trace/coefficient-function (trace/coefficients trace))]
+      (quil/stroke 0 (opacity-scale log-score))
+      (draw-plot f x-pixel-min x-pixel-max 10 x-scale y-scale))))
+
+(defn draw-curve-count!
+  "Draws the number of curves in the bottom right-hand corner"
+  [curves pixel-width pixel-height]
+  (let [curve-count (count curves)]
+    (quil/rect-mode :corners)
+    (quil/text-align :right :bottom)
+    (quil/with-fill 0
+      (quil/text-size 14) ; pixels
+      (let [padding 5]
+        (quil/text
+         (str "curves: " curve-count)
+         (- pixel-width padding)
+         (- pixel-height padding))))))
 
 (defn draw!
   "Draws the given state onto the current sketch."
-  [{:keys [points curves mouse-pos]} x-scale y-scale pixel-width]
+  [{:keys [points curves mouse-pos]} x-scale y-scale pixel-width make-opacity-scale]
   (let [inverted-x-scale (scales/invert x-scale)
         inverted-y-scale (scales/invert y-scale)
         x-pixel-max (int (/ pixel-width 2))
         x-pixel-min (* -1 x-pixel-max)]
     (quil/background 255)
-    (let [opacity-scale (constantly 255)]
+    (draw-curve-count! curves pixel-width pixel-height)
+    (let [opacity-scale (make-opacity-scale (map :log-score curves))]
       (draw-curves! curves
                     inverted-x-scale
                     inverted-y-scale
                     opacity-scale
                     x-pixel-min
                     x-pixel-max))
+
     (draw-clicked-points! points curves mouse-pos inverted-x-scale inverted-y-scale)))

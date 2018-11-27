@@ -13,6 +13,7 @@
 (def config
   {:state {}
    :sketch {:state (integrant/ref :state)
+            :sketch-type :prior
 
             :x-point-min -10
             :x-point-max 10
@@ -35,6 +36,7 @@
       (sketches/sampling-thread stop? state (case sketch-type
                                               :resampling #(resampling/sample-curve % num-particles)
                                               :prior      #(prior/sample-curve %)))
+      ;; Offset starting the threads so curves don't arrive in bursts.
       (Thread/sleep 250))
     stop?))
 
@@ -47,14 +49,18 @@
   (atom (db/init)))
 
 (defmethod integrant/init-key :sketch
-  [_ {:keys [state pixel-width pixel-height x-point-min x-point-max y-point-min y-point-max num-particles]
+  [_ {:keys [state pixel-width pixel-height x-point-min x-point-max y-point-min y-point-max num-particles sketch-type]
       :as opts}]
   (let [x-scale (scales/linear [0 pixel-width] [x-point-min x-point-max])
-        y-scale (scales/linear [pixel-height 0] [y-point-min y-point-max])]
+        y-scale (scales/linear [pixel-height 0] [y-point-min y-point-max])
+        make-opacity-scale (case sketch-type
+                             :resampling resampling/make-opacity-scale
+                             :prior prior/make-opacity-scale)]
     (sketches/applet (merge (select-keys opts [:anti-aliasing :pixel-width :pixel-height])
                             {:state state
                              :x-scale x-scale
-                             :y-scale y-scale}))))
+                             :y-scale y-scale
+                             :make-opacity-scale make-opacity-scale}))))
 
 (defmethod integrant/halt-key! :sketch
   [_ sketch]

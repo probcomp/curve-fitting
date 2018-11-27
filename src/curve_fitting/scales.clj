@@ -2,12 +2,14 @@
 
 (defrecord LinearScale [domain-min domain-max range-min range-max]
   clojure.lang.IFn
-  (invoke [{:keys [domain-min domain-max range-min range-max]} n]
-    (let [domain-span (- domain-max domain-min)
-          range-span (- range-max range-min)]
-      (+ range-min (* range-span
-                      (/ (float (- n domain-min))
-                         domain-span))))))
+  (invoke [{:keys [domain-min domain-max range-min range-max] :as scale} n]
+    (if (= domain-min domain-max)
+      range-max
+      (let [domain-span (- domain-max domain-min)
+            range-span (- range-max range-min)]
+        (+ range-min (* range-span
+                        (/ (- n domain-min)
+                           domain-span)))))))
 (defn linear
   [domain range]
   (->LinearScale (first domain) (last domain) (first range) (last range)))
