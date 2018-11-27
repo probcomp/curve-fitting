@@ -4,7 +4,10 @@
 (defn init
   "Returns the initial state for the sketch."
   []
-  {:points [], :curves []})
+  {:points     []
+   :curves     []
+   :digits     []
+   :max-curves 20})
 
 (defn add-curve
   "Adds a curve to the sketch state."
@@ -27,3 +30,27 @@
   "Resets the sketch state to its initial value, clearing all points and curves."
   [state]
   (reset! state (init)))
+
+(defn add-digit
+  "Add a digit to the list of digits."
+  [state raw-key]
+  (update state :digits conj raw-key))
+
+(defn delete-digit
+  "Deletes the last digit from the list of digits."
+  [state]
+  (update state :digits (comp vec butlast)))
+
+(defn- clear-digits
+  "Clear the list of numbers."
+  [state]
+  (assoc state :digits []))
+
+(defn set-max-curves
+  "Parse the list of digits entered into a number and set it as the maximum number
+  of curves."
+  [{:keys [digits] :as state}]
+  (cond-> state
+    true (clear-digits)
+    true (clear-curves)
+    (seq digits) (assoc :max-curves (Integer/parseInt (apply str digits)))))
