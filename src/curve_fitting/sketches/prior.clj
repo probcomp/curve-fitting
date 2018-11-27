@@ -6,6 +6,7 @@
 
 (defn sample-curve
   [points]
+  (Thread/sleep 100)
   (let [xs (map first points)
         ys (map second points)]
     (let [[_ trace log-score]
