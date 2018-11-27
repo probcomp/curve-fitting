@@ -27,7 +27,7 @@
   (quil/end-shape))
 
 (defn draw-point-selection!
-  [pixel-x pixel-y radius red-value blue-value]
+  [pixel-x pixel-y radius r g b]
   (do
     (defn draw-circle []
       (quil/arc pixel-x
@@ -41,7 +41,7 @@
     (quil/stroke 255 255 255 192)
     (draw-circle)
     (quil/stroke-weight 1)
-    (quil/stroke red-value 0 blue-value 192)
+    (quil/stroke r g b 255)
     (draw-circle)))
 
 (defn draw-point-borders
@@ -66,22 +66,26 @@
     (doseq [[point outlier-score] (map list
                                        points
                                        outlier-scores)]
-      (let [red-value  (int (* 255 outlier-score))
-            blue-value (int (- 255 red-value))
+      (let [point-mode (:outlier-mode point)
+            [r g b] (case point-mode
+                      :auto    [(int (* 255 outlier-score))
+                                0
+                                (- 255 (int (* 255 outlier-score)))]
+                      :inlier  [0 255 0]
+                      :outlier [255 0 255])
             pixel-x    (inverted-x-scale (:x point))
             pixel-y    (inverted-y-scale (:y point))]
         (draw-point-borders pixel-x pixel-y)
-        (quil/fill red-value 0 blue-value 255)
+        (quil/fill r g b 255)
         (quil/ellipse pixel-x
                       pixel-y
                       point-pixel-radius
                       point-pixel-radius)
 
         (when (:selected point)
-          (draw-point-selection! pixel-x pixel-y 10
-                                 red-value blue-value))
+          (draw-point-selection! pixel-x pixel-y 10 r g b))
 
-        (quil/fill red-value 0 blue-value 255)))))
+        (quil/fill r g b 255)))))
 
 (defn draw-curves!
   "Draws the provided curves onto the current sketch."
