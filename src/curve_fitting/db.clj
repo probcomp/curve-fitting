@@ -6,7 +6,7 @@
   []
   {:points     []
    :curves     []
-   :numbers    []
+   :digits     []
    :max-curves 20})
 
 (defn add-curve
@@ -31,25 +31,26 @@
   [state]
   (reset! state (init)))
 
-(defn add-number
-  "Add a number to the list of numbers."
+(defn add-digit
+  "Add a digit to the list of digits."
   [state raw-key]
-  (update state :numbers conj raw-key))
+  (update state :digits conj raw-key))
 
-(defn delete-number
-  "Deletes the last number from the list of numbers."
+(defn delete-digit
+  "Deletes the last digit from the list of digits."
   [state]
-  (update state :numbers (comp vec butlast)))
+  (update state :digits (comp vec butlast)))
 
-(defn- clear-numbers
+(defn- clear-digits
   "Clear the list of numbers."
   [state]
-  (assoc state :numbers []))
+  (assoc state :digits []))
 
 (defn set-max-curves
-  "Parse the list of numbers entered into an integer and set it as the number of max curves."
-  [{:keys [numbers] :as state}]
+  "Parse the list of digits entered into a number and set it as the maximum number
+  of curves."
+  [{:keys [digits] :as state}]
   (cond-> state
-    true (clear-numbers)
+    true (clear-digits)
     true (clear-curves)
-    (seq numbers) (assoc :max-curves (Integer/parseInt (apply str numbers)))))
+    (seq digits) (assoc :max-curves (Integer/parseInt (apply str digits)))))

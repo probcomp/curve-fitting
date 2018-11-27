@@ -16,10 +16,10 @@
         (db/init)
 
         (contains? #{\0 \1 \2 \3 \4 \5 \6 \7 \8 \9} raw-key)
-        (db/add-number state raw-key)
+        (db/add-digit state raw-key)
 
         (= raw-key \backspace)
-        (db/delete-number state)
+        (db/delete-digit state)
 
         (= raw-key \newline)
         (db/set-max-curves state)
