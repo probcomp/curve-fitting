@@ -7,6 +7,8 @@
             [curve-fitting.model :as model]
             [curve-fitting.model.trace :as trace]
             [curve-fitting.inference :as inference]
+            [curve-fitting.sketches.prior :as prior]
+            [curve-fitting.sketches.resampling :as resampling]
             [curve-fitting.scales :as scales]))
 
 (def text-padding 5) ; distance between text and scene border
@@ -85,11 +87,15 @@
   (quil/text-align :left :bottom)
   (quil/with-fill 0
     (quil/text-size 14) ; pixels
-    (quil/text (name mode) text-padding (- pixel-height text-padding))))
+    (quil/text (case mode
+                 :prior "prior"
+                 :resampling "approximate posterior")
+               text-padding
+               (- pixel-height text-padding))))
 
 (defn draw!
   "Draws the given state onto the current sketch."
-  [{:keys [points curves max-curves digits]} mode x-scale y-scale pixel-width pixel-height make-opacity-scale]
+  [{:keys [mode points curves max-curves digits]} x-scale y-scale pixel-width pixel-height]
   (let [inverted-x-scale (scales/invert x-scale)
         inverted-y-scale (scales/invert y-scale)
         x-pixel-max (int (/ pixel-width 2))
@@ -97,7 +103,10 @@
     (quil/background 255)
     (draw-mode! mode pixel-width pixel-height)
     (draw-curve-count! curves max-curves digits pixel-width pixel-height)
-    (let [opacity-scale (make-opacity-scale (map :log-score curves))]
+    (let [make-opacity-scale (case mode
+                               :resampling resampling/make-opacity-scale
+                               :prior prior/make-opacity-scale)
+          opacity-scale (make-opacity-scale (map :log-score curves))]
       (draw-curves! curves
                     inverted-x-scale
                     inverted-y-scale

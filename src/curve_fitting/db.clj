@@ -4,7 +4,8 @@
 (defn init
   "Returns the initial state for the sketch."
   []
-  {:points     []
+  {:mode       :prior
+   :points     []
    :curves     []
    :digits     []
    :max-curves 20})
@@ -54,3 +55,9 @@
     true (clear-digits)
     true (clear-curves)
     (seq digits) (assoc :max-curves (Integer/parseInt (apply str digits)))))
+
+(defn toggle-mode
+  [{:keys [mode] :as state}]
+  (-> state
+      (clear-curves)
+      (assoc :mode (get {:prior :resampling, :resampling :prior} mode))))
