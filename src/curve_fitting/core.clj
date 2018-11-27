@@ -41,6 +41,14 @@
     (quil/stroke red-value 0 blue-value 192)
     (draw-circle)))
 
+(defn draw-point-borders
+  [pixel-x pixel-y]
+  "Draws a white border around a point to make it easier to distinguish between
+  points and lines."
+  (quil/fill 255 255 255 255)
+  (quil/ellipse
+    pixel-x pixel-y (+ 2 point-pixel-radius) (+ 2 point-pixel-radius)))
+
 (defn draw-clicked-points!
   "Draws the given points onto the current sketch."
   [points curves inverted-x-scale inverted-y-scale]
@@ -59,6 +67,7 @@
             blue-value (int (- 255 red-value))
             pixel-x    (inverted-x-scale (:x point))
             pixel-y    (inverted-y-scale (:y point))]
+        (draw-point-borders pixel-x pixel-y)
         (quil/fill red-value 0 blue-value 192)
         (quil/ellipse pixel-x
                       pixel-y
