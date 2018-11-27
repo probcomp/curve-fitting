@@ -25,16 +25,26 @@
 
 (defn draw-clicked-points!
   "Draws the given points onto the current sketch."
-  [points inverted-x-scale inverted-y-scale]
+  [points curves inverted-x-scale inverted-y-scale]
   (quil/no-stroke)
-  (quil/fill 255 0 0 192) ; red
-  (doseq [[point-x point-y] points]
-    (let [pixel-x (inverted-x-scale point-x)
-          pixel-y (inverted-y-scale point-y)]
-      (quil/ellipse pixel-x
-                    pixel-y
-                    point-pixel-radius
-                    point-pixel-radius))))
+
+  (let [trace-outliers (map trace/outliers (map :trace curves))
+        outlier-scores (if (empty? trace-outliers)
+                         (repeat (count points) 0)
+                         (map #(/ (count (filter true? %))
+                                  (count curves))
+                              (apply map vector trace-outliers)))]
+    (doseq [[[point-x point-y] outlier-score] (map list points
+                                                   outlier-scores)]
+      (let [red-value  (int (* 255 outlier-score))
+            blue-value (int (- 255 red-value))
+            pixel-x (inverted-x-scale point-x)
+            pixel-y (inverted-y-scale point-y)]
+        (quil/fill red-value 0 blue-value 192)
+        (quil/ellipse pixel-x
+                      pixel-y
+                      point-pixel-radius
+                      point-pixel-radius)))))
 
 (defn draw-curves!
   "Draws the provided curves onto the current sketch."
@@ -44,20 +54,34 @@
       (quil/stroke 0 (opacity-scale log-score))
       (draw-plot f x-pixel-min x-pixel-max 10 x-scale y-scale))))
 
+(defn draw-curve-count!
+  "Draws the number of curves in the bottom right-hand corner"
+  [curves pixel-width pixel-height]
+  (let [curve-count (count curves)]
+    (quil/rect-mode :corners)
+    (quil/text-align :right :bottom)
+    (quil/with-fill 0
+      (quil/text-size 14) ; pixels
+      (let [padding 5]
+        (quil/text
+         (str "curves: " curve-count)
+         (- pixel-width padding)
+         (- pixel-height padding))))))
+
 (defn draw!
   "Draws the given state onto the current sketch."
-  [{:keys [points curves]} x-scale y-scale make-opacity-scale pixel-width]
+  [{:keys [points curves]} x-scale y-scale pixel-width pixel-height make-opacity-scale]
   (let [inverted-x-scale (scales/invert x-scale)
         inverted-y-scale (scales/invert y-scale)
         x-pixel-max (int (/ pixel-width 2))
         x-pixel-min (* -1 x-pixel-max)]
     (quil/background 255)
-    (when (seq curves)
-      (let [opacity-scale (make-opacity-scale (map :log-score curves))]
-        (draw-curves! curves
-                      inverted-x-scale
-                      inverted-y-scale
-                      opacity-scale
-                      x-pixel-min
-                      x-pixel-max)))
-    (draw-clicked-points! points inverted-x-scale inverted-y-scale)))
+    (draw-curve-count! curves pixel-width pixel-height)
+    (let [opacity-scale (make-opacity-scale (map :log-score curves))]
+      (draw-curves! curves
+                    inverted-x-scale
+                    inverted-y-scale
+                    opacity-scale
+                    x-pixel-min
+                    x-pixel-max))
+    (draw-clicked-points! points curves inverted-x-scale inverted-y-scale)))
