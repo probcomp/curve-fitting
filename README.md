@@ -26,5 +26,6 @@ Once you are running the application you can place points by clicking anywhere i
 ### Keyboard shortcuts
 
 - `c` will clear the screen.
+- `t` will switch "modes" from `prior` to `resampling`, and vice versa
 - Digits followed by `return` will set the maximum number of curves.
 - Any other key will refresh the curves.
