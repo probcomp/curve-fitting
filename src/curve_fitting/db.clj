@@ -36,6 +36,11 @@
   [state raw-key]
   (update state :numbers conj raw-key))
 
+(defn delete-number
+  "Deletes the last number from the list of numbers."
+  [state]
+  (update state :numbers (comp vec butlast)))
+
 (defn- clear-numbers
   "Clear the list of numbers."
   [state]
