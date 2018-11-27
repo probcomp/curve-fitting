@@ -1,5 +1,5 @@
 (ns curve-fitting.model
-  (:refer-clojure :only [let reduce])
+  (:refer-clojure :only [reduce])
   (:require
    [metaprob.state :as state]
    [metaprob.trace :as trace]
