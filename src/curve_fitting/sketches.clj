@@ -8,11 +8,14 @@
 
 (defn mouse-pressed
   [state x-scale y-scale event]
-  (let [{:keys [x y]} event]
-    ;; (db/add-point state [(x-scale x) (y-scale y)])
-    (db/add-point state {:x (x-scale x)
-                         :y (y-scale y)
-                         :selected false})))
+  (let [{:keys [x y]} event
+        selected (filter #(:selected %) (:points state))]
+    (if (seq selected)
+      (db/cycle-point-outlier-mode state)
+      (db/add-point state {:x (x-scale x)
+                           :y (y-scale y)
+                           :selected false
+                           :outlier-mode :auto}))))
 
 (defn mouse-moved
   [state x-scale y-scale event]
