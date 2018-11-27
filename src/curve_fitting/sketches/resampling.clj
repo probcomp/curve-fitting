@@ -6,8 +6,8 @@
 
 (defn sample-curve
   [points num-particles]
-  (let [xs (map first points)
-        ys (map second points)]
+  (let [xs (map :x points)
+        ys (map :y points)]
     (let [[trace score] (inference/importance-resampling
                          model/curve-model
                          [xs]

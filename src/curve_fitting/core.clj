@@ -57,12 +57,13 @@
                          (map #(/ (count (filter true? %))
                                   (count curves))
                               (apply map vector trace-outliers)))]
-    (doseq [[[point-x point-y] outlier-score] (map list points
-                                                   outlier-scores)]
+    (doseq [[pt outlier-score] (map list
+                                    points
+                                    outlier-scores)]
       (let [red-value  (int (* 255 outlier-score))
             blue-value (int (- 255 red-value))
-            pixel-x (inverted-x-scale point-x)
-            pixel-y (inverted-y-scale point-y)]
+            pixel-x    (inverted-x-scale (:x pt))
+            pixel-y    (inverted-y-scale (:y pt))]
         (quil/fill red-value 0 blue-value 192)
         (quil/ellipse pixel-x
                       pixel-y
@@ -98,7 +99,7 @@
 
 (defn draw!
   "Draws the given state onto the current sketch."
-  [{:keys [points curves mouse-pos]} x-scale y-scale pixel-width make-opacity-scale]
+  [{:keys [points curves mouse-pos]} x-scale y-scale pixel-width pixel-height make-opacity-scale]
   (let [inverted-x-scale (scales/invert x-scale)
         inverted-y-scale (scales/invert y-scale)
         x-pixel-max (int (/ pixel-width 2))

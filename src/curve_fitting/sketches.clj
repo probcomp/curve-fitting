@@ -8,12 +8,30 @@
 (defn mouse-pressed
   [state x-scale y-scale event]
   (let [{:keys [x y]} event]
-    (db/add-point state [(x-scale x) (y-scale y)])))
+    ;; (db/add-point state [(x-scale x) (y-scale y)])
+    (db/add-point state {:x (x-scale x)
+                         :y (y-scale y)
+                         :selected false})))
 
 (defn mouse-moved
   [state x-scale y-scale event]
-  (let [{:keys [x y]} event]
-    (db/mouse-pos state [(x-scale x) (y-scale y)])))
+  (let [{:keys [x y]} event
+        updated-state (db/mouse-pos state
+                                    [(x-scale x) (y-scale y)])]
+
+    (if (seq? (:points updated-state))
+      (doseq [[ix point] (map-indexed vector (:points updated-state))]
+        (let [selection-threshold 10
+              pixel-x (x-scale (:x point))
+              pixel-y (y-scale (:y point))
+              mp-x    (x-scale x)
+              mp-y    (y-scale y)
+              distance (Math/sqrt (+ (Math/pow (- pixel-x mp-x) 2)
+                                     (Math/pow (- pixel-y mp-y) 2)))]
+          (if (< distance selection-threshold)
+            (db/select-point updated-state ix)
+            (db/deselect-point updated-state ix))))
+      updated-state)))
 
 (defn key-typed
   [state {:keys [raw-key]}]
