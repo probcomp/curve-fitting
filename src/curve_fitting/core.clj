@@ -95,7 +95,7 @@
 
 (defn draw!
   "Draws the given state onto the current sketch."
-  [{:keys [mode points curves max-curves digits]} x-scale y-scale pixel-width pixel-height]
+  [{:keys [mode points curves max-curves digits]} x-scale y-scale pixel-width pixel-height make-opacity-scale]
   (let [inverted-x-scale (scales/invert x-scale)
         inverted-y-scale (scales/invert y-scale)
         x-pixel-max (int (/ pixel-width 2))
