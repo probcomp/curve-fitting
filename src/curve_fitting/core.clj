@@ -71,7 +71,7 @@
             pixel-x    (inverted-x-scale (:x point))
             pixel-y    (inverted-y-scale (:y point))]
         (draw-point-borders pixel-x pixel-y)
-        (quil/fill red-value 0 blue-value 192)
+        (quil/fill red-value 0 blue-value 255)
         (quil/ellipse pixel-x
                       pixel-y
                       point-pixel-radius
