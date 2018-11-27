@@ -25,5 +25,6 @@ Once you are running the application you can place points by clicking anywhere i
 
 ### Keyboard shortcuts
 
-- `backspace` will clear the screen.
+- `c` will clear the screen.
 - Any other key will refresh the curves.
+- Digits followed by `return` will set the maximum number of curves.

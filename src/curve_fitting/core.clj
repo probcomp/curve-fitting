@@ -29,7 +29,7 @@
   points and lines."
   (quil/fill 255 255 255 255)
   (quil/ellipse
-    pixel-x pixel-y (+ 2 point-pixel-radius) (+ 2 point-pixel-radius)))
+   pixel-x pixel-y (+ 2 point-pixel-radius) (+ 2 point-pixel-radius)))
 
 (defn draw-clicked-points!
   "Draws the given points onto the current sketch."
@@ -65,7 +65,7 @@
 
 (defn draw-curve-count!
   "Draws the number of curves in the bottom right-hand corner"
-  [curves pixel-width pixel-height]
+  [curves max-curves numbers pixel-width pixel-height]
   (let [curve-count (count curves)]
     (quil/rect-mode :corners)
     (quil/text-align :right :bottom)
@@ -73,19 +73,21 @@
       (quil/text-size 14) ; pixels
       (let [padding 5]
         (quil/text
-         (str "curves: " curve-count)
+         (str "curves: " curve-count "/" (if (seq numbers)
+                                           (str (apply str numbers) "_")
+                                           max-curves))
          (- pixel-width padding)
          (- pixel-height padding))))))
 
 (defn draw!
   "Draws the given state onto the current sketch."
-  [{:keys [points curves]} x-scale y-scale pixel-width pixel-height make-opacity-scale]
+  [{:keys [points curves max-curves numbers]} x-scale y-scale pixel-width pixel-height make-opacity-scale]
   (let [inverted-x-scale (scales/invert x-scale)
         inverted-y-scale (scales/invert y-scale)
         x-pixel-max (int (/ pixel-width 2))
         x-pixel-min (* -1 x-pixel-max)]
     (quil/background 255)
-    (draw-curve-count! curves pixel-width pixel-height)
+    (draw-curve-count! curves max-curves numbers pixel-width pixel-height)
     (let [opacity-scale (make-opacity-scale (map :log-score curves))]
       (draw-curves! curves
                     inverted-x-scale
