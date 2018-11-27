@@ -6,9 +6,11 @@
 
 (defn sample-curve
   [points]
+
   (Thread/sleep 100)
   (let [xs (map :x points)
         ys (map :y points)]
+
     (let [[_ trace log-score]
           (interpreters/infer :procedure model/curve-model
                               :inputs [xs]

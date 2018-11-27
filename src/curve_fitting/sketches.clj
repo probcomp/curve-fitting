@@ -41,15 +41,25 @@
                (:points updated-state))))))
 
 (defn key-typed
-  [state {:keys [raw-key]}]
-  (if (contains? #{\backspace} raw-key)
-    (db/init)
-    (db/clear-curves state)))
+  [state {:keys [raw-key] :as event}]
+  (cond (= raw-key \c)
+        (db/init)
+
+        (contains? #{\0 \1 \2 \3 \4 \5 \6 \7 \8 \9} raw-key)
+        (db/add-digit state raw-key)
+
+        (= raw-key \backspace)
+        (db/delete-digit state)
+
+        (= raw-key \newline)
+        (db/set-max-curves state)
+
+        :else (db/clear-curves state)))
 
 (defn applet
-  [{:keys [anti-aliasing state pixel-width pixel-height x-scale y-scale make-opacity-scale]}]
+  [{:keys [state mode pixel-width pixel-height x-scale y-scale anti-aliasing make-opacity-scale max-curves]}]
   (applet/applet :size [pixel-width pixel-height]
-                 :draw (fn [_] (core/draw! @state x-scale y-scale pixel-width pixel-height make-opacity-scale))
+                 :draw (fn [_] (core/draw! @state mode x-scale y-scale pixel-width pixel-height make-opacity-scale))
                  :mouse-pressed (fn [_ event] (swap! state #(mouse-pressed % x-scale y-scale event)))
                  :mouse-moved (fn [_ event] (swap! state #(mouse-moved % x-scale y-scale event)))
                  :key-typed (fn [_ event] (swap! state #(key-typed % event)))
@@ -67,11 +77,12 @@
         (when-not @stop?
           (let [{old-points :points :as old-val} @state
                 curve (sample-curve old-points)]
-            (swap! state (fn [{new-points :points :as new-val}]
+            (swap! state (fn [{new-points :points, curves :curves, max-curves :max-curves :as new-val}]
                            ;; Discard the curve if the points changed while
                            ;; we were working.
                            (cond-> new-val
-                             (= new-points old-points)
+                             (and (= new-points old-points)
+                                  (< (count curves) max-curves))
                              (db/add-curve curve)))))
           (recur)))
       (catch Exception e
