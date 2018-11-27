@@ -29,19 +29,6 @@
   (-> state
       (assoc :mouse-pos point)))
 
-(defn select-point
-  "Indicates the specified point is selected"
-  [state ix]
-  (-> state
-      (assoc-in [:points ix :selected] true)))
-
-(defn deselect-point
-  "Indicates the specified point is selected"
-  [state ix]
-  (let [new-state (-> state
-                      (assoc-in [:points ix :selected] false))]
-    new-state))
-
 (defn reset
   "Resets the sketch state to its initial value, clearing all points and curves."
   [state]

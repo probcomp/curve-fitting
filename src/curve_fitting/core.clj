@@ -24,31 +24,26 @@
   (quil/end-shape))
 
 (defn draw-point-selection!
-  [pixel-x pixel-y mouse-px mouse-py red-value blue-value]
-  (let [active-radius 10
-        circle-radius 10
-        distance (Math/sqrt (+ (Math/pow (- pixel-x mouse-px) 2)
-                               (Math/pow (- pixel-y mouse-py) 2)))]
-    (when (< distance active-radius)
-      (do
-        (defn draw-circle []
-          (quil/arc pixel-x
-                    pixel-y
-                    (* 2 circle-radius)
-                    (* 2 circle-radius)
-                    0
-                    (* 2 3.141)))
-        (quil/fill 0 0 0 0)
-        (quil/stroke-weight 4)
-        (quil/stroke 255 255 255 192)
-        (draw-circle)
-        (quil/stroke-weight 1)
-        (quil/stroke red-value 0 blue-value 192)
-        (draw-circle)))))
+  [pixel-x pixel-y radius red-value blue-value]
+  (do
+    (defn draw-circle []
+      (quil/arc pixel-x
+                pixel-y
+                (* 2 radius)
+                (* 2 radius)
+                0
+                (* 2 3.141)))
+    (quil/fill 0 0 0 0)
+    (quil/stroke-weight 4)
+    (quil/stroke 255 255 255 192)
+    (draw-circle)
+    (quil/stroke-weight 1)
+    (quil/stroke red-value 0 blue-value 192)
+    (draw-circle)))
 
 (defn draw-clicked-points!
   "Draws the given points onto the current sketch."
-  [points curves [mouse-x mouse-y] inverted-x-scale inverted-y-scale]
+  [points curves inverted-x-scale inverted-y-scale]
   (quil/no-stroke)
 
   (let [trace-outliers (map trace/outliers (map :trace curves))
@@ -57,22 +52,23 @@
                          (map #(/ (count (filter true? %))
                                   (count curves))
                               (apply map vector trace-outliers)))]
-    (doseq [[pt outlier-score] (map list
-                                    points
-                                    outlier-scores)]
+    (doseq [[point outlier-score] (map list
+                                       points
+                                       outlier-scores)]
       (let [red-value  (int (* 255 outlier-score))
             blue-value (int (- 255 red-value))
-            pixel-x    (inverted-x-scale (:x pt))
-            pixel-y    (inverted-y-scale (:y pt))]
+            pixel-x    (inverted-x-scale (:x point))
+            pixel-y    (inverted-y-scale (:y point))]
         (quil/fill red-value 0 blue-value 192)
         (quil/ellipse pixel-x
                       pixel-y
                       point-pixel-radius
                       point-pixel-radius)
-        (draw-point-selection! pixel-x pixel-y
-                               (inverted-x-scale mouse-x)
-                               (inverted-y-scale mouse-y)
-                               red-value blue-value)
+
+        (when (:selected point)
+          (draw-point-selection! pixel-x pixel-y 10
+                                 red-value blue-value))
+
         (quil/fill red-value 0 blue-value 255)))))
 
 (defn draw-curves!
@@ -99,7 +95,7 @@
 
 (defn draw!
   "Draws the given state onto the current sketch."
-  [{:keys [points curves mouse-pos]} x-scale y-scale pixel-width pixel-height make-opacity-scale]
+  [{:keys [points curves]} x-scale y-scale pixel-width pixel-height make-opacity-scale]
   (let [inverted-x-scale (scales/invert x-scale)
         inverted-y-scale (scales/invert y-scale)
         x-pixel-max (int (/ pixel-width 2))
@@ -107,6 +103,7 @@
     (quil/background 255)
     (draw-curve-count! curves pixel-width pixel-height)
     (let [opacity-scale (make-opacity-scale (map :log-score curves))]
+
       (draw-curves! curves
                     inverted-x-scale
                     inverted-y-scale
@@ -114,4 +111,7 @@
                     x-pixel-min
                     x-pixel-max))
 
-    (draw-clicked-points! points curves mouse-pos inverted-x-scale inverted-y-scale)))
+    (draw-clicked-points! points
+                          curves
+                          inverted-x-scale
+                          inverted-y-scale)))

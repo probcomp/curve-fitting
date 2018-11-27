@@ -3,7 +3,8 @@
             [quil.applet :as applet]
             [quil.middleware :as middleware]
             [curve-fitting.core :as core]
-            [curve-fitting.db :as db]))
+            [curve-fitting.db :as db]
+            [curve-fitting.scales :as scales]))
 
 (defn mouse-pressed
   [state x-scale y-scale event]
@@ -18,20 +19,22 @@
   (let [{:keys [x y]} event
         updated-state (db/mouse-pos state
                                     [(x-scale x) (y-scale y)])]
-
-    (if (seq? (:points updated-state))
-      (doseq [[ix point] (map-indexed vector (:points updated-state))]
-        (let [selection-threshold 10
-              pixel-x (x-scale (:x point))
-              pixel-y (y-scale (:y point))
-              mp-x    (x-scale x)
-              mp-y    (y-scale y)
-              distance (Math/sqrt (+ (Math/pow (- pixel-x mp-x) 2)
-                                     (Math/pow (- pixel-y mp-y) 2)))]
-          (if (< distance selection-threshold)
-            (db/select-point updated-state ix)
-            (db/deselect-point updated-state ix))))
-      updated-state)))
+    (assoc
+     updated-state
+     :points
+     (vec (map (fn [point]
+                 (let [selection-threshold 0.2
+                       m-x    (x-scale x)
+                       m-y    (y-scale y)
+                       p-x    (:x point)
+                       p-y    (:y point)
+                       distance (Math/sqrt
+                                 (+ (Math/pow (- p-x m-x) 2)
+                                    (Math/pow (- p-y m-y) 2)))]
+                   (if (< distance selection-threshold)
+                     (assoc point :selected true)
+                     (assoc point :selected false))))
+               (:points updated-state))))))
 
 (defn key-typed
   [state {:keys [raw-key]}]
