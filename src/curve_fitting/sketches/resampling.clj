@@ -8,27 +8,22 @@
   [points num-particles]
   (let [xs (map :x points)
         ys (map :y points)
-        point-modes (into {} (map-indexed
-                              (fn [i p] {i (:outlier-mode p)})
-                              points))
-
-        outlier-traces (reduce
-                        (fn [traces [ix mode]]
-                          (merge traces (case mode
-                                          :inlier (trace/outlier-target-trace
-                                                   :inlier ix)
-                                          :outlier (trace/outlier-target-trace
-                                                    :outlier ix)
-                                          {})))
-                        {}
-                        (seq point-modes))
-
+        y-traces    (trace/target-trace ys)
+        traces      (reduce
+                     (fn [traces [ix mode]]
+                       (case mode
+                         :inlier (trace/add-outlier-target-trace
+                                  traces :inlier ix)
+                         :outlier (trace/add-outlier-target-trace
+                                   traces :outlier ix)
+                         traces))
+                     y-traces
+                     (map-indexed (fn [i p] [i (:outlier-mode p)])
+                                  points))
         [trace score] (inference/importance-resampling
                        model/curve-model
                        [xs]
-                       (merge
-                        outlier-traces
-                        (trace/target-trace ys))
+                       traces
                        num-particles)]
     {:trace trace
      :score (Math/exp score)}))
