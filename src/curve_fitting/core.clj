@@ -9,6 +9,7 @@
             [curve-fitting.inference :as inference]
             [curve-fitting.scales :as scales]))
 
+(def text-padding 5) ; distance between text and scene border
 (def point-pixel-radius 8)
 (def num-curves 10)
 
@@ -71,22 +72,30 @@
     (quil/text-align :right :bottom)
     (quil/with-fill 0
       (quil/text-size 14) ; pixels
-      (let [padding 5]
-        (quil/text
-         (str "curves: " curve-count "/" (if (seq digits)
-                                           (str (apply str digits) "_")
-                                           max-curves))
-         (- pixel-width padding)
-         (- pixel-height padding))))))
+      (let [text (str "curves: " curve-count "/" (if (seq digits)
+                                                   (str (apply str digits) "_")
+                                                   max-curves))
+            x (- pixel-width text-padding)
+            y (- pixel-height text-padding)]
+        (quil/text text x y)))))
+
+(defn draw-mode!
+  [mode pixel-width pixel-height]
+  (quil/rect-mode :corners)
+  (quil/text-align :left :bottom)
+  (quil/with-fill 0
+    (quil/text-size 14) ; pixels
+    (quil/text (name mode) text-padding (- pixel-height text-padding))))
 
 (defn draw!
   "Draws the given state onto the current sketch."
-  [{:keys [points curves max-curves digits]} x-scale y-scale pixel-width pixel-height make-opacity-scale]
+  [{:keys [points curves max-curves digits]} mode x-scale y-scale pixel-width pixel-height make-opacity-scale]
   (let [inverted-x-scale (scales/invert x-scale)
         inverted-y-scale (scales/invert y-scale)
         x-pixel-max (int (/ pixel-width 2))
         x-pixel-min (* -1 x-pixel-max)]
     (quil/background 255)
+    (draw-mode! mode pixel-width pixel-height)
     (draw-curve-count! curves max-curves digits pixel-width pixel-height)
     (let [opacity-scale (make-opacity-scale (map :log-score curves))]
       (draw-curves! curves

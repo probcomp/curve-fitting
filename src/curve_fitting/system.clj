@@ -12,8 +12,10 @@
 
 (def config
   {:state {}
-   :sketch {:state (integrant/ref :state)
-            :sketch-type :prior
+   :mode {:mode :prior}
+   :sketch {:mode (integrant/ref :mode)
+            :state (integrant/ref :state)
+            :sketch-type :resampling
 
             :x-point-min -10
             :x-point-max 10
@@ -25,15 +27,20 @@
             :y-point-max 10
 
             :anti-aliasing 8}
-   :engine {:state (integrant/ref :state)
-            :sketch-type :prior
+   :engine {:mode (integrant/ref :mode)
+            :state (integrant/ref :state)
+            :sketch-type :resampling
             :num-particles 150}})
 
+(defmethod integrant/init-key :mode
+  [_ {:keys [mode]}]
+  mode)
+
 (defmethod integrant/init-key :engine
-  [_ {:keys [state sketch-type num-particles]}]
+  [_ {:keys [mode state num-particles]}]
   (let [stop? (atom false)]
     (dotimes [_ 4]
-      (sketches/sampling-thread stop? state (case sketch-type
+      (sketches/sampling-thread stop? state (case mode
                                               :resampling #(resampling/sample-curve % num-particles)
                                               :prior      #(prior/sample-curve %)))
       ;; Offset starting the threads so curves don't arrive in bursts.
@@ -49,15 +56,16 @@
   (atom (db/init)))
 
 (defmethod integrant/init-key :sketch
-  [_ {:keys [state pixel-width pixel-height x-point-min x-point-max y-point-min y-point-max num-particles sketch-type]
+  [_ {:keys [state mode pixel-width pixel-height x-point-min x-point-max y-point-min y-point-max num-particles]
       :as opts}]
   (let [x-scale (scales/linear [0 pixel-width] [x-point-min x-point-max])
         y-scale (scales/linear [pixel-height 0] [y-point-min y-point-max])
-        make-opacity-scale (case sketch-type
+        make-opacity-scale (case mode
                              :resampling resampling/make-opacity-scale
                              :prior prior/make-opacity-scale)]
     (sketches/applet (merge (select-keys opts [:anti-aliasing :pixel-width :pixel-height])
-                            {:state state
+                            {:mode mode
+                             :state state
                              :x-scale x-scale
                              :y-scale y-scale
                              :make-opacity-scale make-opacity-scale}))))
