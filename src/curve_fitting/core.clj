@@ -9,7 +9,8 @@
             [curve-fitting.inference :as inference]
             [curve-fitting.sketches.prior :as prior]
             [curve-fitting.sketches.resampling :as resampling]
-            [curve-fitting.scales :as scales]))
+            [curve-fitting.scales :as scales]
+            [curve-fitting.util.quil :as q-util]))
 
 (def text-padding 5) ; distance between text and scene border
 (def point-pixel-radius 8)
@@ -25,14 +26,6 @@
                                (inverted-y-scale y)]))))]
     (quil/curve-vertex x y))
   (quil/end-shape))
-
-(defn draw-point-borders
-  [pixel-x pixel-y]
-  "Draws a white border around a point to make it easier to distinguish between
-  points and lines."
-  (quil/fill 255 255 255 255)
-  (quil/ellipse
-   pixel-x pixel-y (+ 2 point-pixel-radius) (+ 2 point-pixel-radius)))
 
 (defn draw-clicked-points!
   "Draws the given points onto the current sketch."
@@ -51,12 +44,11 @@
             blue-value (int (- 255 red-value))
             pixel-x (inverted-x-scale point-x)
             pixel-y (inverted-y-scale point-y)]
-        (draw-point-borders pixel-x pixel-y)
-        (quil/fill red-value 0 blue-value 255)
-        (quil/ellipse pixel-x
-                      pixel-y
-                      point-pixel-radius
-                      point-pixel-radius)))))
+        (q-util/draw-point! pixel-x
+                            pixel-y
+                            point-pixel-radius
+                            red-value
+                            blue-value)))))
 
 (defn draw-curves!
   "Draws the provided curves onto the current sketch."
