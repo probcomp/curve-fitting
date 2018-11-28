@@ -39,23 +39,3 @@
 (define curve-model
   (gen [xs]
     (map (add-noise-to-curve (generate-curve)) xs)))
-
-(define get-coeffs-from-trace
-  (gen [tr]
-    (define degree
-      (trace-get
-       (trace-subtrace
-        tr
-        '(1 1 "generate-curve" 0 "degree" "uniform-sample"))))
-
-    (define coeff-subtraces
-      (trace-subtrace
-       tr
-       '(1 1 "generate-curve" 1 "coeffs" "replicate" "map")))
-
-    (map (gen [k]
-           (trace-get
-            (trace-subtrace
-             coeff-subtraces
-             (list k "f" "gaussian"))))
-         (trace-keys coeff-subtraces))))
