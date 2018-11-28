@@ -11,7 +11,7 @@
     (let [[_ trace log-score]
           (interpreters/infer :procedure model/curve-model
                               :inputs [xs]
-                              :target-trace (trace/target-trace ys))]
+                              :target-trace (trace/points-trace points))]
       {:trace trace
        :log-score log-score})))
 

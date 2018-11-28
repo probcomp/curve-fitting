@@ -14,8 +14,6 @@
    [metaprob.compositional :as comp]
    [metaprob.examples.gaussian :refer :all]))
 
-(def outliers-enabled true)
-
 (define generate-curve
   (gen []
     (define degree
@@ -26,16 +24,17 @@
       (reduce + (map (gen [n] (* (nth coeffs n) (expt x n)))
                      (range degree))))))
 
-(define outlier?
-  (gen []
-    (and outliers-enabled
-         (flip 0.1))))
-
 (define add-noise-to-curve
   (gen [curve]
+    ;; Outliers are disabled by default. Enable with an intervention trace.
+    (define outliers-enabled? (flip 1)) ; Are outliers enabled?
     (gen [x]
+      (define outlier-point? (flip 0.1))
       (gaussian (curve x)
-                (if (outlier?) 400 0.1)))))
+                (if (and outliers-enabled?
+                         outlier-point?)
+                  400
+                  0.1)))))
 
 (define curve-model
   (gen [xs]
