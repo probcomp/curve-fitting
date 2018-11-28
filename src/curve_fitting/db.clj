@@ -8,7 +8,8 @@
    :points     []
    :curves     []
    :digits     []
-   :max-curves 20})
+   :max-curves 20
+   :outliers?  true})
 
 (defn add-curve
   "Adds a curve to the sketch state."
@@ -81,7 +82,21 @@
     (seq digits) (assoc :max-curves (Integer/parseInt (apply str digits)))))
 
 (defn toggle-mode
+  "Sets the simulation to sample from the approximate posterior if it is sampling
+  from the prior and vice versa."
   [{:keys [mode] :as state}]
   (-> state
       (clear-curves)
       (assoc :mode (get {:prior :resampling, :resampling :prior} mode))))
+
+(defn outliers?
+  "Returns true if outliers are enabled, false otherwise."
+  [db]
+  (:outliers? db))
+
+(defn toggle-outliers
+  "Toggles outliers on/off."
+  [db]
+  (-> db
+      (clear-curves)
+      (update :outliers? not)))

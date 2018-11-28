@@ -43,3 +43,15 @@
                              :target-trace (trace/points-trace points))]
       (is (= (map #(select-keys % [:y :outlier?]) points)
              (trace/points trace))))))
+
+(deftest test-outliers-trace
+  (testing "round trip"
+    (is (true? (trace/outliers-enabled? (trace/outliers-trace true))))
+    (is (false? (trace/outliers-enabled? (trace/outliers-trace false)))))
+  (testing "infer"
+    (let [outliers? true
+          [_ trace _] (infer :procedure model/curve-model
+                             :inputs [[1 2 3]]
+                             :target-trace (metaprob/empty-trace)
+                             :intervention-trace (trace/outliers-trace outliers?))]
+      (is (= outliers? (trace/outliers-enabled? trace))))))

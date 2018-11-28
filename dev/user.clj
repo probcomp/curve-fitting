@@ -4,4 +4,12 @@
             [integrant.repl.state :refer [system]]
             [curve-fitting.system :as system]))
 
+(defn state
+  []
+  @(:state system))
+
+(defn pprint-state
+  []
+  (clojure.pprint/pprint (state)))
+
 (repl/set-prep! (constantly system/config))

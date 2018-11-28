@@ -41,13 +41,9 @@
   [ys]
   (fix-points (metaprob/empty-trace) ys))
 
-#_
-(defn add-outlier-target-trace
-  "Given a list of indexes, add an arm to the provided trace structure
-  to fix the points at those indexes outliers or inliers"
-  [traces mode i]
-  (let [tf (if (= mode :inlier) false true)]
-    (assoc-in traces ["map" i 2 "predicate" "outlier?" "then" "flip"] {:value tf})))
+(defn outliers-trace
+  [outliers?]
+  (metaprob/trace-set (metaprob/empty-trace) outliers-enabled-path outliers?))
 
 ;; Points accessors
 
@@ -125,9 +121,3 @@
          (map-indexed (fn [i coefficient]
                         (* coefficient (Math/pow x i))))
          (reduce +))))
-
-#_(let [[_ trace _] (metaprob.interpreters/infer :procedure curve-fitting.model/curve-model
-                                                 :inputs [[1 2 3]]
-                                                 :target-trace (target-trace [1 2 3]))]
-    (outliers trace)
-    [trace (coefficients trace)])

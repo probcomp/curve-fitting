@@ -5,13 +5,16 @@
             [curve-fitting.model.trace :as trace]))
 
 (defn sample-curve
-  [points num-particles]
+  [points outliers? num-particles]
+  (def outliers? outliers?)
   (let [xs (map :x points)
         [trace score] (inference/importance-resampling
                        model/curve-model
                        [xs]
                        (trace/points-trace points)
+                       (trace/outliers-trace outliers?)
                        num-particles)]
+    (def trace trace)
     {:trace trace
      :score (Math/exp score)}))
 
