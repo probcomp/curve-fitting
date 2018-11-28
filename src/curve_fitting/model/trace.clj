@@ -5,6 +5,9 @@
 ;; Utility
 
 (defn get-subtrace-in
+  "`clojure.core/get-in`, but for traces. Retrieves the subtrace at the provided
+  key path if it exists. Returns `nil` if any of the keys in the path are
+  missing."
   [trace path]
   (if-not (seq path)
     trace
@@ -22,12 +25,17 @@
 ;; Cosntructors
 
 (defn point-subtrace
-  [{:keys [y outlier?]}]
-  (cond-> (metaprob/empty-trace)
-    (some? y) (metaprob/trace-set point-y-path y)
-    (some? outlier?) (metaprob/trace-set point-outlier-path outlier?)))
+  "Generates a point subtrace that matches the values in `point`. `point` is a
+  map with two optional keys: `:y` and `:outlier?`."
+  [point]
+  (let [{:keys [y outlier?]} point]
+    (cond-> (metaprob/empty-trace)
+      (some? y) (metaprob/trace-set point-y-path y)
+      (some? outlier?) (metaprob/trace-set point-outlier-path outlier?))))
 
 (defn fix-points
+  "Modifies `trace` such that the choices the model makes concerning points match
+  the values in `pionts`. See `point-subtrace` for a description of `points`."
   [trace points]
   (reduce (fn [trace [i point]]
             (metaprob/trace-set-subtrace trace
@@ -38,10 +46,13 @@
                   points)))
 
 (defn points-trace
+  "Returns a trace that fixes the model's outputs to `ys`."
   [ys]
   (fix-points (metaprob/empty-trace) ys))
 
 (defn outliers-trace
+  "Returns a trace that fixes the choice of whether outliers are enabled to
+  `outliers?`."
   [outliers?]
   (metaprob/trace-set (metaprob/empty-trace) outliers-enabled-path outliers?))
 
