@@ -14,7 +14,6 @@
 
 (def text-padding 5) ; distance between text and scene border
 (def point-pixel-radius 8)
-(def num-curves 10)
 
 (defn draw-plot [f from to step inverted-x-scale inverted-y-scale]
   (quil/no-fill)
