@@ -9,11 +9,42 @@
             [curve-fitting.inference :as inference]
             [curve-fitting.sketches.prior :as prior]
             [curve-fitting.sketches.resampling :as resampling]
-            [curve-fitting.scales :as scales]))
+            [curve-fitting.scales :as scales]
+            [curve-fitting.util.quil :as util.quil]))
 
 (def text-padding 5) ; distance between text and scene border
 (def point-pixel-radius 8)
-(def num-curves 10)
+
+(defn draw-point-border!
+  [x y radius]
+  "Draws a white border around a point to make it easier to distinguish between
+  points and lines."
+  (quil/with-fill [255 255 255 255]
+    (quil/ellipse
+     x y (+ 2 radius) (+ 2 radius))))
+
+
+(defn draw-point!
+  "Draws a point and its corresponding white border."
+  [pixel-x pixel-y point-pixel-radius red-value blue-value]
+  (draw-point-border! pixel-x pixel-y point-pixel-radius)
+  (quil/fill red-value 0 blue-value 255)
+  (quil/ellipse pixel-x
+                pixel-y
+                point-pixel-radius
+                point-pixel-radius))
+
+(defn draw-point-selection!
+  [pixel-x pixel-y radius r g b]
+  (quil/stroke-weight 4)
+  (quil/with-stroke [255 255 255 192]
+    (util.quil/with-no-fill
+      (util.quil/draw-circle pixel-x pixel-y radius)))
+
+  (quil/stroke-weight 1)
+  (quil/with-stroke [r g b 255]
+    (util.quil/with-no-fill
+      (util.quil/draw-circle pixel-x pixel-y radius))))
 
 (defn draw-plot [f from to step inverted-x-scale inverted-y-scale]
   (quil/no-fill)
@@ -25,32 +56,6 @@
                                (inverted-y-scale y)]))))]
     (quil/curve-vertex x y))
   (quil/end-shape))
-
-(defn draw-point-selection!
-  [pixel-x pixel-y radius r g b]
-  (do
-    (defn draw-circle []
-      (quil/arc pixel-x
-                pixel-y
-                (* 2 radius)
-                (* 2 radius)
-                0
-                (* 2 3.141)))
-    (quil/fill 0 0 0 0)
-    (quil/stroke-weight 4)
-    (quil/stroke 255 255 255 192)
-    (draw-circle)
-    (quil/stroke-weight 1)
-    (quil/stroke r g b 255)
-    (draw-circle)))
-
-(defn draw-point-borders
-  [pixel-x pixel-y]
-  "Draws a white border around a point to make it easier to distinguish between
-  points and lines."
-  (quil/fill 255 255 255 255)
-  (quil/ellipse
-   pixel-x pixel-y (+ 2 point-pixel-radius) (+ 2 point-pixel-radius)))
 
 (defn draw-clicked-points!
   "Draws the given points onto the current sketch."
@@ -75,12 +80,9 @@
                       :outlier [255 0 255])
             pixel-x    (inverted-x-scale (:x point))
             pixel-y    (inverted-y-scale (:y point))]
-        (draw-point-borders pixel-x pixel-y)
-        (quil/fill r g b 255)
-        (quil/ellipse pixel-x
-                      pixel-y
-                      point-pixel-radius
-                      point-pixel-radius)
+        (draw-point-border! pixel-x pixel-y point-pixel-radius)
+        (quil/with-fill [r g b 255]
+          (util.quil/draw-circle pixel-x pixel-y point-pixel-radius))
 
         (when (:selected point)
           (draw-point-selection! pixel-x pixel-y 10 r g b))
