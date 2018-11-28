@@ -26,7 +26,7 @@
 
 (define add-noise-to-curve
   (gen [curve]
-    ;; Outliers are disabled by default. Enable with an intervention trace.
+    ;; Outliers are enabled by default. Enable with an intervention trace.
     (define outliers-enabled? (flip 1)) ; Are outliers enabled?
     (gen [x]
       (define outlier-point? (flip 0.1))
