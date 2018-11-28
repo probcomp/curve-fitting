@@ -1,21 +1,19 @@
 (ns curve-fitting.util.quil
-  "Functioons for using Quil to draw points and lines."
+  "Generic, domain-agnostic Quil utility functions."
   (:require [quil.core :as quil]))
 
-(defn draw-point-borders
-  [pixel-x pixel-y point-pixel-radius]
-  "Draws a white border around a point to make it easier to distinguish between
-  points and lines."
-  (quil/fill 255 255 255 255)
-  (quil/ellipse
-   pixel-x pixel-y (+ 2 point-pixel-radius) (+ 2 point-pixel-radius)))
+(defmacro with-no-fill
+  "Temporarily disable filling geometry for the body of this macro. The code
+  outside of with-fill form will have the previous fill color set."
+  [& body]
+  `(let [previous-fill# (quil/current-fill)]
+     (quil/no-fill)
+     (let [return-val# (do ~@body)]
+       (when (some? previous-fill#)
+         (quil/fill previous-fill#))
+       return-val#)))
 
-(defn draw-point!
-  "Draws a point and its corresponding white border."
-  [pixel-x pixel-y point-pixel-radius red-value blue-value]
-  (draw-point-borders pixel-x pixel-y point-pixel-radius)
-  (quil/fill red-value 0 blue-value 255)
-  (quil/ellipse pixel-x
-                pixel-y
-                point-pixel-radius
-                point-pixel-radius))
+(defn draw-circle
+  "Draws a circle in the display window."
+  [x y radius]
+  (quil/ellipse x y radius radius))

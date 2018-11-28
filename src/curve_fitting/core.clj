@@ -10,10 +10,41 @@
             [curve-fitting.sketches.prior :as prior]
             [curve-fitting.sketches.resampling :as resampling]
             [curve-fitting.scales :as scales]
-            [curve-fitting.util.quil :as q-util]))
+            [curve-fitting.util.quil :as util.quil]))
 
 (def text-padding 5) ; distance between text and scene border
 (def point-pixel-radius 8)
+
+(defn draw-point-border!
+  [x y radius]
+  "Draws a white border around a point to make it easier to distinguish between
+  points and lines."
+  (quil/with-fill [255 255 255 255]
+    (quil/ellipse
+     x y (+ 2 radius) (+ 2 radius))))
+
+
+(defn draw-point!
+  "Draws a point and its corresponding white border."
+  [pixel-x pixel-y point-pixel-radius red-value blue-value]
+  (draw-point-border! pixel-x pixel-y point-pixel-radius)
+  (quil/fill red-value 0 blue-value 255)
+  (quil/ellipse pixel-x
+                pixel-y
+                point-pixel-radius
+                point-pixel-radius))
+
+(defn draw-point-selection!
+  [pixel-x pixel-y radius r g b]
+  (quil/stroke-weight 4)
+  (quil/with-stroke [255 255 255 192]
+    (util.quil/with-no-fill
+      (util.quil/draw-circle pixel-x pixel-y radius)))
+
+  (quil/stroke-weight 1)
+  (quil/with-stroke [r g b 255]
+    (util.quil/with-no-fill
+      (util.quil/draw-circle pixel-x pixel-y radius))))
 
 (defn draw-plot [f from to step inverted-x-scale inverted-y-scale]
   (quil/no-fill)
@@ -37,17 +68,26 @@
                          (map #(/ (count (filter true? %))
                                   (count curves))
                               (apply map vector trace-outliers)))]
-    (doseq [[[point-x point-y] outlier-score] (map list points
-                                                   outlier-scores)]
-      (let [red-value  (int (* 255 outlier-score))
-            blue-value (int (- 255 red-value))
-            pixel-x (inverted-x-scale point-x)
-            pixel-y (inverted-y-scale point-y)]
-        (q-util/draw-point! pixel-x
-                            pixel-y
-                            point-pixel-radius
-                            red-value
-                            blue-value)))))
+    (doseq [[point outlier-score] (map list
+                                       points
+                                       outlier-scores)]
+      (let [point-mode (:outlier-mode point)
+            [r g b] (case point-mode
+                      :auto    [(int (* 255 outlier-score))
+                                0
+                                (- 255 (int (* 255 outlier-score)))]
+                      :inlier  [0 255 0]
+                      :outlier [255 0 255])
+            pixel-x    (inverted-x-scale (:x point))
+            pixel-y    (inverted-y-scale (:y point))]
+        (draw-point-border! pixel-x pixel-y point-pixel-radius)
+        (quil/with-fill [r g b 255]
+          (util.quil/draw-circle pixel-x pixel-y point-pixel-radius))
+
+        (when (:selected point)
+          (draw-point-selection! pixel-x pixel-y 10 r g b))
+
+        (quil/fill r g b 255)))))
 
 (defn draw-curves!
   "Draws the provided curves onto the current sketch."
@@ -104,4 +144,8 @@
                     opacity-scale
                     x-pixel-min
                     x-pixel-max))
-    (draw-clicked-points! points curves inverted-x-scale inverted-y-scale)))
+
+    (draw-clicked-points! points
+                          curves
+                          inverted-x-scale
+                          inverted-y-scale)))

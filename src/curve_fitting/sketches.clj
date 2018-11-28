@@ -9,8 +9,37 @@
 
 (defn mouse-pressed
   [state x-scale y-scale event]
-  (let [{:keys [x y]} event]
-    (db/add-point state [(x-scale x) (y-scale y)])))
+  (let [{:keys [x y]} event
+        selected (filter #(:selected %) (:points state))
+        new-state (if (seq selected)
+                    (db/cycle-point-outlier-mode state)
+                    (db/add-point state {:x (x-scale x)
+                                         :y (y-scale y)
+                                         :selected false
+                                         :outlier-mode :auto}))]
+    (db/clear-curves new-state)))
+
+(defn mouse-moved
+  [state x-scale y-scale event]
+  (let [{:keys [x y]} event
+        updated-state (db/mouse-pos state
+                                    [(x-scale x) (y-scale y)])]
+    (assoc
+     updated-state
+     :points
+     (vec (map (fn [point]
+                 (let [selection-threshold 0.2
+                       m-x    (x-scale x)
+                       m-y    (y-scale y)
+                       p-x    (:x point)
+                       p-y    (:y point)
+                       distance (Math/sqrt
+                                 (+ (Math/pow (- p-x m-x) 2)
+                                    (Math/pow (- p-y m-y) 2)))]
+                   (if (< distance selection-threshold)
+                     (assoc point :selected true)
+                     (assoc point :selected false))))
+               (:points updated-state))))))
 
 (defn key-typed
   [state {:keys [raw-key] :as event}]
@@ -36,6 +65,7 @@
   (applet/applet :size [pixel-width pixel-height]
                  :draw (fn [_] (core/draw! @state x-scale y-scale pixel-width pixel-height make-opacity-scale))
                  :mouse-pressed (fn [_ event] (swap! state #(mouse-pressed % x-scale y-scale event)))
+                 :mouse-moved (fn [_ event] (swap! state #(mouse-moved % x-scale y-scale event)))
                  :key-typed (fn [_ event] (swap! state #(key-typed % event)))
                  ;; Why :no-bind-output is necessary: https://github.com/quil/quil/issues/216
                  :features [:keep-on-top :no-bind-output]

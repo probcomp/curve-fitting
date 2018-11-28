@@ -27,6 +27,30 @@
       (update :points conj point)
       (clear-curves)))
 
+(defn cycle-point-outlier-mode
+  "Cycles a point through its states (model-generated outlier value,
+  manually set inlier, manually set outlier, deleted)"
+  [{:keys [points] :as state}]
+  (assoc
+   state
+   :points
+   (reduce (fn [ps p]
+             (let [[selected current] ((juxt :selected :outlier-mode) p)]
+               (if selected
+                 (case current
+                   :auto    (conj ps (assoc p :outlier-mode :inlier))
+                   :inlier  (conj ps (assoc p :outlier-mode :outlier))
+                   :outlier ps)
+                 (conj ps p))))
+           []
+           (:points state))))
+
+(defn mouse-pos
+  "Notes the current mouse position."
+  [state point]
+  (-> state
+      (assoc :mouse-pos point)))
+
 (defn reset
   "Resets the sketch state to its initial value, clearing all points and curves."
   [state]

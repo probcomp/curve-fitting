@@ -6,15 +6,27 @@
 
 (defn sample-curve
   [points num-particles]
-  (let [xs (map first points)
-        ys (map second points)]
-    (let [[trace score] (inference/importance-resampling
-                         model/curve-model
-                         [xs]
-                         (trace/target-trace ys)
-                         num-particles)]
-      {:trace trace
-       :score (Math/exp score)})))
+  (let [xs (map :x points)
+        ys (map :y points)
+        y-traces    (trace/target-trace ys)
+        traces      (reduce
+                     (fn [traces [ix mode]]
+                       (case mode
+                         :inlier (trace/add-outlier-target-trace
+                                  traces :inlier ix)
+                         :outlier (trace/add-outlier-target-trace
+                                   traces :outlier ix)
+                         traces))
+                     y-traces
+                     (map-indexed (fn [i p] [i (:outlier-mode p)])
+                                  points))
+        [trace score] (inference/importance-resampling
+                       model/curve-model
+                       [xs]
+                       traces
+                       num-particles)]
+    {:trace trace
+     :score (Math/exp score)}))
 
 (defn make-opacity-scale
   "Returns `255` regardless of input. All curves are at full opacity."
