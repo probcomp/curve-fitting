@@ -13,7 +13,6 @@
 (def config
   {:state {}
    :sketch {:state (integrant/ref :state)
-            :sketch-type :resampling
 
             :x-point-min -10
             :x-point-max 10
@@ -26,7 +25,6 @@
 
             :anti-aliasing 8}
    :engine {:state (integrant/ref :state)
-            :sketch-type :resampling
             :num-particles 150}})
 
 (defmethod integrant/init-key :mode
