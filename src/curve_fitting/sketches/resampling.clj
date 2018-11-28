@@ -5,26 +5,16 @@
             [curve-fitting.model.trace :as trace]))
 
 (defn sample-curve
-  [points num-particles]
+  [points outliers? num-particles]
+  (def outliers? outliers?)
   (let [xs (map :x points)
-        ys (map :y points)
-        y-traces    (trace/target-trace ys)
-        traces      (reduce
-                     (fn [traces [ix mode]]
-                       (case mode
-                         :inlier (trace/add-outlier-target-trace
-                                  traces :inlier ix)
-                         :outlier (trace/add-outlier-target-trace
-                                   traces :outlier ix)
-                         traces))
-                     y-traces
-                     (map-indexed (fn [i p] [i (:outlier-mode p)])
-                                  points))
         [trace score] (inference/importance-resampling
                        model/curve-model
                        [xs]
-                       traces
+                       (trace/points-trace points)
+                       (trace/outliers-trace outliers?)
                        num-particles)]
+    (def trace trace)
     {:trace trace
      :score (Math/exp score)}))
 

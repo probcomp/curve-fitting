@@ -49,6 +49,9 @@
         (= raw-key \t)
         (db/toggle-mode state)
 
+        (= raw-key \o)
+        (db/toggle-outliers state)
+
         (contains? #{\0 \1 \2 \3 \4 \5 \6 \7 \8 \9} raw-key)
         (db/add-digit state raw-key)
 
@@ -79,20 +82,17 @@
     (try
       (loop []
         (when-not @stop?
-          (let [{old-points :points, old-mode :mode :as old-val} @state
-                curve (case old-mode
-                        :resampling (resampling/sample-curve old-points num-particles)
-                        :prior      (prior/sample-curve old-points))]
-            (swap! state (fn [{new-points :points
-                               new-mode :mode
-                               curves :curves
-                               max-curves :max-curves :as new-val}]
+          (let [{old-points :points, outliers? :outliers?, :as old-state} @state
+                curve (case (:mode old-state)
+                        :resampling (resampling/sample-curve old-points outliers? num-particles)
+                        :prior      (prior/sample-curve old-points outliers?))]
+            (swap! state (fn [{:keys [curves max-curves] :as new-state}]
                            ;; Discard the curve if the points changed while
                            ;; we were working.
-                           (cond-> new-val
-                             (and (= new-points old-points)
-                                  (< (count curves) max-curves)
-                                  (= old-mode new-mode))
+                           (cond-> new-state
+                             (and (= (select-keys old-state [:points :mode :outliers?])
+                                     (select-keys new-state [:points :mode :outliers?]))
+                                  (< (count curves) max-curves))
                              (db/add-curve curve)))))
           (recur)))
       (catch Exception e

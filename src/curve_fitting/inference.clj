@@ -15,7 +15,7 @@
    [metaprob.examples.gaussian :refer :all]))
 
 (define importance-resampling
-  (gen [model-procedure inputs target-trace N]
+  (gen [model-procedure inputs target-trace intervention-trace N]
     ;; generate N candidate traces, called particles, each
     ;; with a score
     (define particles
@@ -25,7 +25,7 @@
                    (define [_ _ score]
                      (infer :procedure model-procedure
                             :inputs inputs
-                            :intervention-trace nil
+                            :intervention-trace intervention-trace
                             :target-trace target-trace
                             :output-trace candidate-trace))
                    [candidate-trace score])))

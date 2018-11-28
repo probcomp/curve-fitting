@@ -113,26 +113,28 @@
         (quil/text text x y)))))
 
 (defn draw-mode!
-  [mode pixel-width pixel-height]
+  [mode outliers? pixel-width pixel-height]
   (quil/rect-mode :corners)
   (quil/text-align :left :bottom)
   (quil/with-fill 0
     (quil/text-size 14) ; pixels
-    (quil/text (case mode
-                 :prior "prior"
-                 :resampling "approximate posterior")
+    (quil/text (str (case mode
+                      :prior "prior"
+                      :resampling "approximate posterior")
+                    " with outliers "
+                    (if outliers? "enabled" "disabled"))
                text-padding
                (- pixel-height text-padding))))
 
 (defn draw!
   "Draws the given state onto the current sketch."
-  [{:keys [mode points curves max-curves digits]} x-scale y-scale pixel-width pixel-height make-opacity-scale]
+  [{:keys [mode outliers? points curves max-curves digits]} x-scale y-scale pixel-width pixel-height make-opacity-scale]
   (let [inverted-x-scale (scales/invert x-scale)
         inverted-y-scale (scales/invert y-scale)
         x-pixel-max (int (/ pixel-width 2))
         x-pixel-min (* -1 x-pixel-max)]
     (quil/background 255)
-    (draw-mode! mode pixel-width pixel-height)
+    (draw-mode! mode outliers? pixel-width pixel-height)
     (draw-curve-count! curves max-curves digits pixel-width pixel-height)
     (let [make-opacity-scale (case mode
                                :resampling resampling/make-opacity-scale
