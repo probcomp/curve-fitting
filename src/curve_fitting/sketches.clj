@@ -4,6 +4,7 @@
             [quil.middleware :as middleware]
             [curve-fitting.core :as core]
             [curve-fitting.db :as db]
+            [curve-fitting.point-sets :as point-sets]
             [curve-fitting.sketches.prior :as prior]
             [curve-fitting.sketches.resampling :as resampling]))
 
@@ -41,8 +42,9 @@
                      (assoc point :selected false))))
                (:points updated-state))))))
 
+
 (defn key-typed
-  [state {:keys [raw-key] :as event}]
+  [state x-scale y-scale {:keys [raw-key] :as event}]
   (cond (= raw-key \c)
         (db/init)
 
@@ -61,6 +63,9 @@
         (= raw-key \newline)
         (db/set-max-curves state)
 
+        (= raw-key \p)
+        (db/set-points state (point-sets/next-point-set state x-scale y-scale))
+
         :else (db/clear-curves state)))
 
 (defn applet
@@ -69,7 +74,7 @@
                  :draw (fn [_] (core/draw! @state x-scale y-scale pixel-width pixel-height make-opacity-scale))
                  :mouse-pressed (fn [_ event] (swap! state #(mouse-pressed % x-scale y-scale event)))
                  :mouse-moved (fn [_ event] (swap! state #(mouse-moved % x-scale y-scale event)))
-                 :key-typed (fn [_ event] (swap! state #(key-typed % event)))
+                 :key-typed (fn [_ event] (swap! state #(key-typed % x-scale y-scale event)))
                  ;; Why :no-bind-output is necessary: https://github.com/quil/quil/issues/216
                  :features [:keep-on-top :no-bind-output]
                  ;; Maybe we don't need this any more?
