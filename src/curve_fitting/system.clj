@@ -25,7 +25,7 @@
 
             :anti-aliasing 8}
    :engine {:state (integrant/ref :state)
-            :num-particles 150}})
+            :num-particles 1000}})
 
 (defmethod integrant/init-key :mode
   [_ {:keys [mode]}]
