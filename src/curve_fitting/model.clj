@@ -33,8 +33,8 @@
       (gaussian (curve x)
                 (if (and outliers-enabled?
                          outlier-point?)
-                  400
-                  0.1)))))
+                  10
+                  1)))))
 
 (define curve-model
   (gen [xs]

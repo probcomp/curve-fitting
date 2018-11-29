@@ -21,4 +21,4 @@
 (defn make-opacity-scale
   "Returns `255` regardless of input. All curves are at full opacity."
   [scores]
-  (constantly 255))
+  (constantly 80))

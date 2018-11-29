@@ -13,7 +13,7 @@
             [curve-fitting.util.quil :as util.quil]))
 
 (def text-padding 5) ; distance between text and scene border
-(def point-pixel-radius 8)
+(def point-pixel-radius 12)
 
 (defn draw-point-border!
   [x y radius]
@@ -28,7 +28,7 @@
   "Draws a point and its corresponding white border."
   [pixel-x pixel-y point-pixel-radius red-value blue-value]
   (draw-point-border! pixel-x pixel-y point-pixel-radius)
-  (quil/fill red-value 0 blue-value 255)
+  (quil/fill red-value 0 blue-value 190)
   (quil/ellipse pixel-x
                 pixel-y
                 point-pixel-radius
@@ -85,7 +85,7 @@
           (util.quil/draw-circle pixel-x pixel-y point-pixel-radius))
 
         (when (:selected point)
-          (draw-point-selection! pixel-x pixel-y 10 r g b))
+          (draw-point-selection! pixel-x pixel-y (+ point-pixel-radius 3) r g b))
 
         (quil/fill r g b 255)))))
 

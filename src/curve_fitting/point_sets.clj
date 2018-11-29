@@ -6,7 +6,7 @@
   (let [point-count  (count xs)
         y-min0       (:range-min y-scale)
         y-max0       (:range-max y-scale)
-        y-indent     (/ (- y-max0 y-min0) 50)
+        y-indent     (/ (- y-max0 y-min0) 4)
         y-min        (+ y-min0 y-indent)
         y-max        (- y-max0 y-indent)
         y-range      (- y-max y-min)
@@ -34,9 +34,11 @@
 
 (defn linear-points-outlier [x-min xs y-scale]
   (let [points (vec (linear-points x-min xs y-scale))
-        y-1    (get-in points [1 :y])]
+        y-outlier (/ (- (:range-max y-scale) (:range-min y-scale)) 10)
+        y-1    (- (get-in points [0 :y]) y-outlier)
+        y-8    (+ (get-in points [9 :y]) y-outlier)]
     (-> points
-        (assoc-in [1 :y] (get-in points [8 :y]))
+        (assoc-in [1 :y] y-8)
         (assoc-in [8 :y] y-1))))
 
 (defn exp-points [point-count x-scale y-scale]

@@ -14,8 +14,8 @@
   {:state {}
    :sketch {:state (integrant/ref :state)
 
-            :x-point-min -10
-            :x-point-max 10
+            :x-point-min -5
+            :x-point-max 5
 
             :pixel-width 500
             :pixel-height 500
