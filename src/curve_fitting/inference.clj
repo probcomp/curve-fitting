@@ -1,5 +1,5 @@
 (ns curve-fitting.inference
-  (:refer-clojure :only [second])
+  (:refer-clojure :only [second atom println reset!])
   (:require
    [metaprob.state :as state]
    [metaprob.trace :as trace]
@@ -14,24 +14,33 @@
    [metaprob.compositional :as comp]
    [metaprob.examples.gaussian :refer :all]))
 
-(define importance-resampling
-  (gen [model-procedure inputs target-trace intervention-trace N]
-    ;; generate N candidate traces, called particles, each
-    ;; with a score
-    (define particles
-    	(replicate N
-	               (gen []
-                   (define candidate-trace (mutable-trace))
-                   (define [_ _ score]
-                     (infer :procedure model-procedure
-                            :inputs inputs
-                            :intervention-trace intervention-trace
-                            :target-trace target-trace
-                            :output-trace candidate-trace))
-                   [candidate-trace score])))
-    (define scores
-      (map (gen [p] (nth p 1)) particles))
-    ;; return a trace with probability proportional to (exp score)
-    (define which (log-categorical scores))
 
-    (nth particles which)))
+(define importance-resampling
+
+  (gen [model-procedure inputs target-trace intervention-trace N]
+       ;; generate N candidate traces, called particles, each
+       ;; with a score
+       (def foo (atom 0))
+
+       (define particles
+
+         (replicate N
+                    (gen []
+                         (println @foo)
+                         (reset! foo (+ @foo 1))
+                         (define candidate-trace (mutable-trace))
+                         (define [_ _ score]
+                           (infer :procedure model-procedure
+                                  :inputs inputs
+                                  :intervention-trace intervention-trace
+                                  :target-trace target-trace
+                                  :output-trace candidate-trace))
+                         [candidate-trace score])))
+       (reset! foo 0)
+       (define scores
+         (map (gen [p] (nth p 1)) particles))
+
+       ;; return a trace with probability proportional to (exp score)
+       (define which (log-categorical scores))
+
+       (nth particles which)))
