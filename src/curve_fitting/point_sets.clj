@@ -46,7 +46,7 @@
       [x-max0       (:range-max x-scale)
        x-min0       (:range-min x-scale)
        x-indent-l   (/ (- x-max0 x-min0) 50)
-       x-indent-r   (/ (- x-max0 x-min0) 3)
+       x-indent-r   (/ (- x-max0 x-min0) 50)
        x-min        (+ x-min0 x-indent-l)
        x-max        (- x-max0 x-indent-r)
        x-range      (- x-max x-min)
@@ -54,8 +54,8 @@
 
        y-min0       (:range-min y-scale)
        y-max0       (:range-max y-scale)
-       y-indent-top (/ (- y-max0 y-min0) 50)
-       y-indent-bottom (/ (- y-max0 y-min0) 3)
+       y-indent-top (/ (- y-max0 y-min0) 4.5)
+       y-indent-bottom (/ (- y-max0 y-min0) 2.5)
        y-min        (+ y-min0 y-indent-bottom)
        y-max        (- y-max0 y-indent-top)
 
@@ -63,7 +63,7 @@
                          (+ x-min (* ix interval)))
                        (repeat 10 x-interval))
 
-       ys (map #(Math/pow (+ % (/ (- y-max0 y-min0) 2)) 2) xs)
+       ys (map #(Math/pow (+ % (/ (- y-max0 y-min0) 2)) 2.8) xs)
        y-scale (scales/->LinearScale (first ys) (last ys) y-min y-max)]
 
     (map (fn [x y] {:x x :y (y-scale y)
