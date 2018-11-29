@@ -9,7 +9,8 @@
    :curves     []
    :digits     []
    :max-curves 20
-   :outliers?  true})
+   :outliers?  true
+   :point-set  0})
 
 (defn add-curve
   "Adds a curve to the sketch state."
@@ -26,6 +27,14 @@
   [state point]
   (-> state
       (update :points conj point)
+      (clear-curves)))
+
+(defn set-points
+  "Adds a point to the sketch state."
+  [state [points point-set]]
+  (-> state
+      (assoc :points points)
+      (assoc :point-set point-set)
       (clear-curves)))
 
 (defn cycle-point-outlier-mode
