@@ -12,40 +12,18 @@
 (defn mouse-pressed
   [state px-pt-scales event]
   (let [{x-px-pt :x, y-px-pt :y} px-pt-scales
-        {:keys [x y]} event
         selected (filter #(:selected %) (:points state))
         new-state (if (seq selected)
                     (db/cycle-point-outlier-mode state)
-                    (db/add-point state {:x (x-px-pt x)
-                                         :y (y-px-pt y)
+                    (db/add-point state {:x (float ((:x px-pt-scales) (:x event)))
+                                         :y (float ((:y px-pt-scales) (:y event)))
                                          :selected false
                                          :outlier-mode :auto}))]
     (db/clear-curves new-state)))
 
 (defn mouse-moved
   [state px-pt-scales event]
-  (assert (every? some? (vals px-pt-scales)))
-  (let [{:keys [x y]} event
-        {x-px-pt :x, y-px-pt :y} px-pt-scales
-        _ (assert (some? x-px-pt))
-        _ (assert (some? y-px-pt))
-        updated-state (db/mouse-pos state [(x-px-pt x) (y-px-pt y)])]
-    (assoc updated-state
-           :points
-           (vec (map (fn [point]
-                       (let [selection-threshold 0.2
-                             m-x    (x-px-pt x)
-                             m-y    (y-px-pt y)
-                             p-x    (:x point)
-                             p-y    (:y point)
-                             distance (Math/sqrt
-                                       (+ (Math/pow (- p-x m-x) 2)
-                                          (Math/pow (- p-y m-y) 2)))]
-                         (if (< distance selection-threshold)
-                           (assoc point :selected true)
-                           (assoc point :selected false))))
-                     (:points updated-state))))))
-
+  (db/update-selected state event px-pt-scales))
 
 (defn key-typed
   [state px-pt-scales {:keys [raw-key] :as event}]

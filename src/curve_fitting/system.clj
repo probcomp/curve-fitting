@@ -15,9 +15,9 @@
    :sketch {:state (integrant/ref :state)
 
             :dimensions {:pixel {:x {:min 0, :max 500}
-                                 :y {:min 0, :max 500}}
-                         :point {:x {:min -5, :max 5}
-                                 :y {:min -10, :max 10}}}
+                                 :y {:min 500, :max 0}}
+                         :point {:x {:min -1, :max 1}
+                                 :y {:min -1, :max 1}}}
 
             :anti-aliasing 8}
    :engine {:state (integrant/ref :state)
@@ -50,10 +50,14 @@
                                 (get-in dimensions [:pixel :x :max])]
                                [(get-in dimensions [:point :x :min])
                                 (get-in dimensions [:point :x :max])])
+
         y-px-pt (scales/linear [(get-in dimensions [:pixel :y :min])
                                 (get-in dimensions [:pixel :y :max])]
                                [(get-in dimensions [:point :y :min])
                                 (get-in dimensions [:point :y :max])])]
+
+
+    (def ysc y-px-pt)
     (sketches/applet {:state state
                       :px-pt-scales {:x x-px-pt, :y y-px-pt}
                       :anti-aliasing anti-aliasing})))

@@ -1,5 +1,6 @@
 (ns curve-fitting.db
-  "Functions for initializing and manipulating the application state.")
+  "Functions for initializing and manipulating the application state."
+  (:require [curve-fitting.scales :as scales]))
 
 (defn init
   "Returns the initial state for the sketch."
@@ -58,8 +59,7 @@
 (defn mouse-pos
   "Notes the current mouse position."
   [state point]
-  (-> state
-      (assoc :mouse-pos point)))
+  (assoc state :mouse-pos point))
 
 (defn reset
   "Resets the sketch state to its initial value, clearing all points and curves."
@@ -109,3 +109,35 @@
   (-> db
       (clear-curves)
       (update :outliers? not)))
+
+(defn- euclidean-distance
+  "Returns the euclidean distance between two points."
+  [{x1 :x, y1 :y} {x2 :x, y2 :y}]
+  (Math/sqrt
+   (+ (Math/pow (- x1 x2) 2)
+      (Math/pow (- y1 y2) 2))))
+
+(defn- selected?
+  "Returns whether a given point should be considered selected given the mouse
+  position. Note that the mouse point is in pixels, and the clicked point is in
+  'logical' units."
+  [point mouse-pos px-pt-scales]
+  (let [pt-px-x (scales/invert (:x px-pt-scales))
+        pt-px-y (scales/invert (:y px-pt-scales))
+        px-point {:x (pt-px-x (:x point))
+                  :y (pt-px-y (:y point))}]
+    (< (euclidean-distance px-point mouse-pos)
+       20)))
+
+(defn update-selected
+  "Given a mouse position, updates the database such that all the points near the
+  mouse position are selected."
+  [db mouse-pos px-pt-scales]
+  (update db
+          :points
+          (fn [points]
+            (map (fn [point]
+                   (assoc point
+                          :selected
+                          (selected? point mouse-pos px-pt-scales)))
+                 points))))
