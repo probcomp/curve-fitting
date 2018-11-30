@@ -72,3 +72,15 @@
                              :target-trace (metaprob/empty-trace)
                              :intervention-trace (trace/outliers-trace outliers?))]
       (is (= outliers? (trace/outliers-enabled? trace))))))
+
+(deftest test-hyperparameters
+  (testing "is set"
+    (let [[_ trace _] (infer :procedure model/curve-model
+                             :inputs [[1 2 3]])]
+      (is (some? (trace/inlier-noise trace)))
+      (is (some? (trace/outlier-noise trace)))
+      (is (some? (trace/prob-outlier trace)))))
+  (testing "round trip"
+    (is (= 47 (trace/inlier-noise (trace/fix-inlier-noise (metaprob/empty-trace) 47))))
+    (is (= 47 (trace/outlier-noise (trace/fix-outlier-noise (metaprob/empty-trace) 47))))
+    (is (= 0.47 (trace/prob-outlier (trace/fix-prob-outlier (metaprob/empty-trace) 0.47))))))

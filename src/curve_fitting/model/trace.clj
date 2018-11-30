@@ -166,3 +166,38 @@
          (map-indexed (fn [i coefficient]
                         (* coefficient (Math/pow x i))))
          (reduce +))))
+
+;; Hyperparameters
+
+(defn hyperparameters-path [i] (list 1 "add-noise-to-curve" i))
+(defn- hyperparameter-path [index name type] (concat (hyperparameters-path index) [name type]))
+
+(defn inlier-noise
+  [trace]
+  (metaprob/trace-get trace (hyperparameter-path 1 "inlier-noise" "gamma")))
+
+(defn outlier-noise
+  [trace]
+  (metaprob/trace-get trace (hyperparameter-path 2 "outlier-noise" "gamma")))
+
+(defn prob-outlier
+  [trace]
+  (metaprob/trace-get trace (hyperparameter-path 3 "prob-outlier" "beta")))
+
+(defn fix-inlier-noise
+  [trace val]
+  (metaprob/trace-set trace
+                      (hyperparameter-path 1 "inlier-noise" "gamma")
+                      val))
+
+(defn fix-outlier-noise
+  [trace val]
+  (metaprob/trace-set trace
+                      (hyperparameter-path 2 "outlier-noise" "gamma")
+                      val))
+
+(defn fix-prob-outlier
+  [trace val]
+  (metaprob/trace-set trace
+                      (hyperparameter-path 3 "prob-outlier" "beta")
+                      val))
