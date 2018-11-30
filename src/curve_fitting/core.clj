@@ -24,7 +24,6 @@
     (quil/ellipse
      x y (+ 2 radius) (+ 2 radius))))
 
-
 (defn draw-point!
   "Draws a point and its corresponding white border."
   [pixel-x pixel-y point-pixel-radius red-value blue-value]
