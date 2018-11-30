@@ -37,7 +37,8 @@
     ;; Outliers are enabled by default. Enable with an intervention trace.
     (gen [x]
       (define outlier-point? (flip prob-outlier))
-      (gaussian (curve x)
+      (gaussian (if (and outliers-enabled? outlier-point?)
+                  0 (curve x))
                 (if (and outliers-enabled?
                          outlier-point?)
                   outlier-noise
