@@ -34,7 +34,7 @@
                 (if (and outliers-enabled?
                          outlier-point?)
                   10
-                  0.01)))))
+                  1)))))
 
 (define curve-model
   (gen [xs]

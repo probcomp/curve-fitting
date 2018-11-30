@@ -7,7 +7,7 @@
 
 (def point-coeffs
   [[0 0.5]
-   [0 1 0.5]])
+   [5 5 0.5]])
 
 (defn next-point-set
   [state px-pt-scales]
