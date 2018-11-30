@@ -84,14 +84,14 @@
           outlier-prob (trace/prob-outlier tr)
           new-pts
           (map
-            (fn [[x p]]
+            (fn [x p]
               (let [y (p :y)
                     inlier-score (+ (Math/log (- 1 outlier-prob))
                                     (gaussian/score-gaussian y [(f x) inlier-noise]))
                     outlier-score (+ (Math/log outlier-prob)
                                      (gaussian/score-gaussian y [0 outlier-noise]))]
                 (assoc p :outlier? (nth [false true] (distributions/log-categorical `(~inlier-score ~outlier-score))))))
-            (zipmap xs pts))]
+             xs pts)]
          (trace/fix-points tr new-pts)))
 
      resim-hypers

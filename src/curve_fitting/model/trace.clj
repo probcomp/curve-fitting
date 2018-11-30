@@ -49,8 +49,7 @@
                                          (concat points-subtrace-path (list i))
                                          (point-subtrace point)))
           trace
-          (zipmap (range (count points))
-                  points)))
+          (map vector (range (count points)) points)))
 
 (defn update-outlier
   ""
