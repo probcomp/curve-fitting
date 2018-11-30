@@ -202,6 +202,15 @@
                       (hyperparameter-path 3 "prob-outlier" "beta")
                       val))
 
+(defn- copy-addresses
+  "Returns `destination` with the values for the choices in `source` at `paths` in
+  `destination` at the same `paths`."
+  [source destination paths]
+  (reduce (fn [trace path]
+            (metaprob/trace-set trace path (metaprob/trace-get source path)))
+          destination
+          paths))
+
 (defn partition-trace
   "Takes a trace and a list of paths, and partitions it into two traces, one of
   which has the addresses in the list, and the other of which does not."
@@ -209,11 +218,5 @@
   (let [path-set (into #{} paths)
         addresses (into #{} (metaprob/addresses-of trace))
         {include true, exclude false} (group-by #(contains? path-set %) addresses)]
-    [(reduce (fn [acc path]
-               (metaprob/trace-set acc path (metaprob/trace-get trace path)))
-             (metaprob/trace)
-             include)
-     (reduce (fn [acc path]
-               (metaprob/trace-set acc path (metaprob/trace-get trace path)))
-             (metaprob/trace)
-             exclude)]))
+    [(copy-addresses trace (metaprob/trace) include)
+     (copy-addresses trace (metaprob/trace) exclude)]))
