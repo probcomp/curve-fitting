@@ -172,6 +172,12 @@
 (defn hyperparameters-path [i] (list 1 "add-noise-to-curve" i))
 (defn- hyperparameter-path [index name type] (concat (hyperparameters-path index) [name type]))
 
+(def hyperparameter-paths
+  (list (hyperparameter-path 1 "inlier-noise" "gamma")
+        (hyperparameter-path 2 "outlier-noise" "gamma")
+        (hyperparameter-path 3 "prob-outlier" "beta")))
+
+
 (defn inlier-noise
   [trace]
   (metaprob/trace-get trace (hyperparameter-path 1 "inlier-noise" "gamma")))
