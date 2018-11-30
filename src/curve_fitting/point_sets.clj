@@ -71,12 +71,13 @@
          xs ys)))
 
 (defn next-point-set
-  [state x-scale y-scale]
-  (let [point-count 10
+  [state px-pt-scales]
+  (let [{x-px-pt :x, y-px-pt :y} px-pt-scales
+        point-count 10
         point-set-ix (:point-set state)
 
-        x-max0       (:range-max x-scale)
-        x-min0       (:range-min x-scale)
+        x-max0       (:range-max x-px-pt)
+        x-min0       (:range-min x-px-pt)
         x-indent     (/ (- x-max0 x-min0) 50)
         x-min        (+ x-min0 x-indent)
         x-max        (- x-max0 x-indent)
@@ -87,8 +88,8 @@
                           (+ x-min (* ix interval)))
                         (repeat 10 x-interval))]
     [(case point-set-ix
-       0 (linear-points x-min xs y-scale)
-       1 (linear-points-outlier x-min xs y-scale)
-       2 (exp-points point-count x-scale y-scale)
-       3 (bump-points x-min xs y-scale))
+       0 (linear-points x-min xs y-px-pt)
+       1 (linear-points-outlier x-min xs y-px-pt)
+       2 (exp-points point-count x-px-pt y-px-pt)
+       3 (bump-points x-min xs y-px-pt))
      (mod (inc point-set-ix) 4)]))

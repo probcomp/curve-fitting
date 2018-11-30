@@ -5,46 +5,50 @@
             [curve-fitting.core :as core]
             [curve-fitting.db :as db]
             [curve-fitting.point-sets :as point-sets]
+            [curve-fitting.scales :as scales]
             [curve-fitting.sketches.prior :as prior]
             [curve-fitting.sketches.resampling :as resampling]))
 
 (defn mouse-pressed
-  [state x-scale y-scale event]
-  (let [{:keys [x y]} event
+  [state px-pt-scales event]
+  (let [{x-px-pt :x, y-px-pt :y} px-pt-scales
+        {:keys [x y]} event
         selected (filter #(:selected %) (:points state))
         new-state (if (seq selected)
                     (db/cycle-point-outlier-mode state)
-                    (db/add-point state {:x (x-scale x)
-                                         :y (y-scale y)
+                    (db/add-point state {:x (x-px-pt x)
+                                         :y (y-px-pt y)
                                          :selected false
                                          :outlier-mode :auto}))]
     (db/clear-curves new-state)))
 
 (defn mouse-moved
-  [state x-scale y-scale event]
+  [state px-pt-scales event]
+  (assert (every? some? (vals px-pt-scales)))
   (let [{:keys [x y]} event
-        updated-state (db/mouse-pos state
-                                    [(x-scale x) (y-scale y)])]
-    (assoc
-     updated-state
-     :points
-     (vec (map (fn [point]
-                 (let [selection-threshold 0.2
-                       m-x    (x-scale x)
-                       m-y    (y-scale y)
-                       p-x    (:x point)
-                       p-y    (:y point)
-                       distance (Math/sqrt
-                                 (+ (Math/pow (- p-x m-x) 2)
-                                    (Math/pow (- p-y m-y) 2)))]
-                   (if (< distance selection-threshold)
-                     (assoc point :selected true)
-                     (assoc point :selected false))))
-               (:points updated-state))))))
+        {x-px-pt :x, y-px-pt :y} px-pt-scales
+        _ (assert (some? x-px-pt))
+        _ (assert (some? y-px-pt))
+        updated-state (db/mouse-pos state [(x-px-pt x) (y-px-pt y)])]
+    (assoc updated-state
+           :points
+           (vec (map (fn [point]
+                       (let [selection-threshold 0.2
+                             m-x    (x-px-pt x)
+                             m-y    (y-px-pt y)
+                             p-x    (:x point)
+                             p-y    (:y point)
+                             distance (Math/sqrt
+                                       (+ (Math/pow (- p-x m-x) 2)
+                                          (Math/pow (- p-y m-y) 2)))]
+                         (if (< distance selection-threshold)
+                           (assoc point :selected true)
+                           (assoc point :selected false))))
+                     (:points updated-state))))))
 
 
 (defn key-typed
-  [state x-scale y-scale {:keys [raw-key] :as event}]
+  [state px-pt-scales {:keys [raw-key] :as event}]
   (cond (= raw-key \c)
         (db/init)
 
@@ -64,22 +68,24 @@
         (db/set-max-curves state)
 
         (= raw-key \p)
-        (db/set-points state (point-sets/next-point-set state x-scale y-scale))
+        (db/set-points state (point-sets/next-point-set state px-pt-scales))
 
         :else (db/clear-curves state)))
 
 (defn applet
-  [{:keys [state pixel-width pixel-height x-scale y-scale anti-aliasing make-opacity-scale max-curves]}]
-  (applet/applet :size [pixel-width pixel-height]
-                 :draw (fn [_] (core/draw! @state x-scale y-scale pixel-width pixel-height make-opacity-scale))
-                 :mouse-pressed (fn [_ event] (swap! state #(mouse-pressed % x-scale y-scale event)))
-                 :mouse-moved (fn [_ event] (swap! state #(mouse-moved % x-scale y-scale event)))
-                 :key-typed (fn [_ event] (swap! state #(key-typed % x-scale y-scale event)))
-                 ;; Why :no-bind-output is necessary: https://github.com/quil/quil/issues/216
-                 :features [:keep-on-top :no-bind-output]
-                 ;; Maybe we don't need this any more?
-                 :middleware [#'middleware/fun-mode]
-                 :settings #(quil/smooth anti-aliasing)))
+  [{:keys [state px-pt-scales anti-aliasing]}]
+  (let [pixel-width  (scales/domain-size (:x px-pt-scales))
+        pixel-height (scales/domain-size (:y px-pt-scales))]
+    (applet/applet :size [pixel-width pixel-height]
+                   :draw (fn [_] (core/draw! @state px-pt-scales))
+                   :mouse-pressed (fn [_ event] (swap! state #(mouse-pressed % px-pt-scales event)))
+                   :mouse-moved   (fn [_ event] (swap! state #(mouse-moved   % px-pt-scales event)))
+                   :key-typed     (fn [_ event] (swap! state #(key-typed     % px-pt-scales event)))
+                   ;; Why :no-bind-output is necessary: https://github.com/quil/quil/issues/216
+                   :features [:keep-on-top :no-bind-output]
+                   ;; Maybe we don't need this any more?
+                   :middleware [#'middleware/fun-mode]
+                   :settings #(quil/smooth anti-aliasing))))
 
 (defn sampling-thread
   [stop? state num-particles]

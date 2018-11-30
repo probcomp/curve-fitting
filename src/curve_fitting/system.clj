@@ -14,14 +14,10 @@
   {:state {}
    :sketch {:state (integrant/ref :state)
 
-            :x-point-min -5
-            :x-point-max 5
-
-            :pixel-width 500
-            :pixel-height 500
-
-            :y-point-min -10
-            :y-point-max 10
+            :dimensions {:pixel {:x {:min 0, :max 500}
+                                 :y {:min 0, :max 500}}
+                         :point {:x {:min -5, :max 5}
+                                 :y {:min -10, :max 10}}}
 
             :anti-aliasing 8}
    :engine {:state (integrant/ref :state)
@@ -49,14 +45,18 @@
   (atom (db/init)))
 
 (defmethod integrant/init-key :sketch
-  [_ {:keys [state pixel-width pixel-height x-point-min x-point-max y-point-min y-point-max num-particles]
-      :as opts}]
-  (let [x-scale (scales/linear [0 pixel-width] [x-point-min x-point-max])
-        y-scale (scales/linear [pixel-height 0] [y-point-min y-point-max])]
-    (sketches/applet (merge (select-keys opts [:anti-aliasing :pixel-width :pixel-height])
-                            {:state state
-                             :x-scale x-scale
-                             :y-scale y-scale}))))
+  [_ {:keys [state dimensions anti-aliasing] :as opts}]
+  (let [x-px-pt (scales/linear [(get-in dimensions [:pixel :x :min])
+                                (get-in dimensions [:pixel :x :max])]
+                               [(get-in dimensions [:point :x :min])
+                                (get-in dimensions [:point :x :max])])
+        y-px-pt (scales/linear [(get-in dimensions [:pixel :y :min])
+                                (get-in dimensions [:pixel :y :max])]
+                               [(get-in dimensions [:point :y :min])
+                                (get-in dimensions [:point :y :max])])]
+    (sketches/applet {:state state
+                      :px-pt-scales {:x x-px-pt, :y y-px-pt}
+                      :anti-aliasing anti-aliasing})))
 
 (defmethod integrant/halt-key! :sketch
   [_ sketch]
