@@ -22,6 +22,8 @@
 (def point-outlier-path '(0 "outlier-point?" "flip")) ; path from point subtrace to outlier choice
 (def outliers-enabled-path '(1 "add-noise-to-curve" 0 "outliers-enabled?" "flip")) ; path from root to outliers-enabled? choice
 
+(def coeffs-subtrace-path '(1 1 "generate-curve" 1 "coeffs" "replicate" "map"))
+
 ;; Cosntructors
 
 (defn point-subtrace
@@ -45,6 +47,7 @@
           (zipmap (range (count points))
                   points)))
 
+
 (defn points-trace
   "Returns a trace that fixes the model's outputs to `ys`."
   [ys]
@@ -55,6 +58,25 @@
   `outliers?`."
   [outliers?]
   (metaprob/trace-set (metaprob/empty-trace) outliers-enabled-path outliers?))
+
+(defn coefficients-trace
+  "Returns a trace that fixes the choice of coefficients."
+  [coefficients]
+
+  (reduce (fn [trace [i coeff]]
+            (metaprob/trace-set-subtrace
+             trace
+             (concat coeffs-subtrace-path (list i))
+             (-> (metaprob/empty-trace)
+                 (metaprob/trace-set
+                  '("f" "gaussian")
+                  coeff))))
+          (-> (outliers-trace false)
+              (metaprob/trace-set
+               '(1 1 "generate-curve" 0 "degree" "uniform-sample")
+               (count coefficients)))
+          (zipmap (range (count coefficients))
+                  coefficients)))
 
 ;; Points accessors
 
