@@ -8,3 +8,4 @@ figwheel_server.log
 
 # Compiled ClojureScript
 /resources/public/js
+.idea
