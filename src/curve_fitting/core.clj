@@ -46,15 +46,17 @@
     (util.quil/with-no-fill
       (util.quil/draw-circle pixel-x pixel-y radius))))
 
-(defn draw-plot [f from to step inverted-x-scale inverted-y-scale]
+(defn draw-plot [f from to step x-scale y-scale]
   (quil/no-fill)
   (quil/begin-shape)
-  (doseq [[x y] (->> (range from to step)
-                     (map (fn [x]
-                            (let [y (f x)]
-                              [(inverted-x-scale x)
-                               (inverted-y-scale y)]))))]
-    (quil/curve-vertex x y))
+
+  (let [inverted-y-scale (scales/invert y-scale)]
+    (doseq [[x y] (->> (range from to step)
+                       (map (fn [x]
+                              (let [y (f (x-scale x))]
+                                [x (inverted-y-scale y)]))))]
+      (quil/curve-vertex x y)))
+
   (quil/end-shape))
 
 (defn draw-clicked-points!
@@ -95,7 +97,7 @@
   (doseq [{:keys [trace log-score]} curves]
     (let [f (trace/coefficient-function (trace/coefficients trace))]
       (quil/stroke 0 (opacity-scale log-score))
-      (draw-plot f x-pixel-min x-pixel-max 10 x-scale y-scale))))
+      (draw-plot f x-pixel-min x-pixel-max 1 x-scale y-scale))))
 
 (defn draw-curve-count!
   "Draws the number of curves in the bottom right-hand corner"
@@ -131,8 +133,8 @@
   [{:keys [mode outliers? points curves max-curves digits]} x-scale y-scale pixel-width pixel-height make-opacity-scale]
   (let [inverted-x-scale (scales/invert x-scale)
         inverted-y-scale (scales/invert y-scale)
-        x-pixel-max (int (/ pixel-width 2))
-        x-pixel-min (* -1 x-pixel-max)]
+        x-pixel-max pixel-width
+        x-pixel-min 0]
     (quil/background 255)
     (draw-mode! mode outliers? pixel-width pixel-height)
     (draw-curve-count! curves max-curves digits pixel-width pixel-height)
@@ -141,8 +143,8 @@
                                :prior prior/make-opacity-scale)
           opacity-scale (make-opacity-scale (map :log-score curves))]
       (draw-curves! curves
-                    inverted-x-scale
-                    inverted-y-scale
+                    x-scale
+                    y-scale
                     opacity-scale
                     x-pixel-min
                     x-pixel-max))
