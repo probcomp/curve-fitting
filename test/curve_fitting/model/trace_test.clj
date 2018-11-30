@@ -44,6 +44,23 @@
       (is (= (map #(select-keys % [:y :outlier?]) points)
              (trace/points trace))))))
 
+(deftest test-outliers
+  (testing "is set"
+    (let [[_ trace _] (infer :procedure model/curve-model
+                             :inputs [[1 2 3]])]
+      (is (seq (trace/outliers trace)))))
+  (let [[_ trace _] (infer :procedure model/curve-model
+                           :inputs [[1 2 3]]
+                           :target-trace (trace/points-trace (repeat 3 {:outlier? true}))
+                           :intervention-trace (trace/outliers-trace false))]
+    (is (every? false? (trace/outliers trace)))))
+
+(let [[_ trace _] (infer :procedure model/curve-model
+                         :inputs [[1 2 3]]
+                         :target-trace (trace/points-trace (repeat 3 {:outlier? true}))
+                         :intervention-trace (trace/outliers-trace false))]
+  (trace/outliers trace))
+
 (deftest test-outliers-trace
   (testing "round trip"
     (is (true? (trace/outliers-enabled? (trace/outliers-trace true))))

@@ -13,29 +13,7 @@
    [metaprob.inference :refer :all]
    [metaprob.compositional :as comp]
    [metaprob.examples.gaussian :refer :all]
-   [incanter.distributions :as distributions]))
-
-(define gamma
-  (make-inference-procedure-from-sampler-and-scorer
-   "gamma"
-   (gen [shape scale]
-     (distributions/draw
-      (distributions/gamma-distribution shape scale)))
-   (gen [x [shape scale]]
-     (Math/log (distributions/pdf
-                (distributions/gamma-distribution shape scale)
-                x)))))
-
-(define beta
-  (make-inference-procedure-from-sampler-and-scorer
-   "beta"
-   (gen [alpha beta]
-     (distributions/draw
-      (distributions/beta-distribution alpha beta)))
-   (gen [x [alpha beta]]
-     (Math/log (distributions/pdf
-                (distributions/beta-distribution alpha beta)
-                x)))))
+   [curve-fitting.model.distributions :refer :all]))
 
 (define generate-curve
   (gen []
@@ -49,19 +27,17 @@
 
 (define add-noise-to-curve
   (gen [curve]
+    (define outliers-enabled? (flip 1))
+
     ;; Hyperparameters
     (define inlier-noise (gamma 2 1))
     (define outlier-noise (gamma 10 1))
     (define prob-outlier (beta 1 20))
 
     ;; Outliers are enabled by default. Enable with an intervention trace.
-    (define outliers-enabled? (flip 1)) ; Are outliers enabled?
     (gen [x]
       (define outlier-point? (flip prob-outlier))
-      (gaussian (if (and outliers-enabled?
-                         outlier-point?)
-                  0
-                  (curve x))
+      (gaussian (curve x)
                 (if (and outliers-enabled?
                          outlier-point?)
                   outlier-noise

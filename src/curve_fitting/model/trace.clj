@@ -97,16 +97,20 @@
   [trace]
   (map point (point-subtraces trace)))
 
-(defn outliers
-  "Returns each trace's notion of 'outlierness' of each point"
-  [trace]
-  (map point-outlier? (point-subtraces trace)))
-
 (defn outliers-enabled?
   "Returns true if outliers are enabled in `trace`."
   [trace]
   (metaprob/trace-get
    (metaprob/trace-subtrace trace outliers-enabled-path)))
+
+(defn outliers
+  "Returns each trace's notion of 'outlierness' of each point. Will always be
+  false if outliers are disabled."
+  [trace]
+  (let [outliers-enabled? (outliers-enabled? trace)]
+    (map (fn [point]
+           (and outliers-enabled? (point-outlier? point)))
+         (point-subtraces trace))))
 
 ;; Polynomial
 
