@@ -11,12 +11,13 @@
 
 (defn mouse-pressed
   [state px-pt-scales event]
-  (let [{x-px-pt :x, y-px-pt :y} px-pt-scales
+  (let [px-pt-x (:x px-pt-scales)
+        px-pt-y (:y px-pt-scales)
         selected (filter #(:selected %) (:points state))
         new-state (if (seq selected)
                     (db/cycle-point-outlier-mode state)
-                    (db/add-point state {:x (float ((:x px-pt-scales) (:x event)))
-                                         :y (float ((:y px-pt-scales) (:y event)))
+                    (db/add-point state {:x (float (px-pt-x (:x event)))
+                                         :y (float (px-pt-y (:y event)))
                                          :selected false
                                          :outlier-mode :auto}))]
     (db/clear-curves new-state)))
