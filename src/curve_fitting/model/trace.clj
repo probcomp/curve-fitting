@@ -7,8 +7,9 @@
 (defn trace-update
   "`clojure.core/update-in` but for traces."
   [trace path f]
-  (let [v (metaprob/trace-get trace path)]
-    (metaprob/trace-set trace path (f v))))
+  (let [v (metaprob/trace-get trace path)
+        new-v (f v)]
+    (metaprob/trace-set trace path new-v)))
 
 (defn get-subtrace-in
   "`clojure.core/get-in`, but for traces. Retrieves the subtrace at the provided
@@ -50,6 +51,15 @@
           trace
           (zipmap (range (count points))
                   points)))
+
+(defn update-outlier
+  ""
+  [trace i f]
+  (trace-update trace
+                (concat points-subtrace-path
+                        '(0)
+                        point-outlier-path)
+                f))
 
 (defn points-trace
   "Returns a trace that fixes the model's outputs to `ys`."
