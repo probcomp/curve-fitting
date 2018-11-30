@@ -201,3 +201,19 @@
   (metaprob/trace-set trace
                       (hyperparameter-path 3 "prob-outlier" "beta")
                       val))
+
+(defn partition-trace
+  "Takes a trace and a list of paths, and partitions it into two traces, one of
+  which has the addresses in the list, and the other of which does not."
+  [trace paths]
+  (let [path-set (into #{} paths)
+        addresses (into #{} (metaprob/addresses-of trace))
+        {include true, exclude false} (group-by #(contains? path-set %) addresses)]
+    [(reduce (fn [acc path]
+               (metaprob/trace-set acc path (metaprob/trace-get trace path)))
+             (metaprob/trace)
+             include)
+     (reduce (fn [acc path]
+               (metaprob/trace-set acc path (metaprob/trace-get trace path)))
+             (metaprob/trace)
+             exclude)]))
