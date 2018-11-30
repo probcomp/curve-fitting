@@ -3,7 +3,7 @@
             [quil.core :as quil]
             [quil.applet :as applet]
             [quil.middleware :as middleware]
-            [curve-fitting.core :as core]
+            [curve-fitting.draw :as draw]
             [curve-fitting.db :as db]
             [curve-fitting.scales :as scales]
             [curve-fitting.sketches :as sketches]

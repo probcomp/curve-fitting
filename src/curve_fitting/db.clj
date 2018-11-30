@@ -9,9 +9,14 @@
    :points     []
    :curves     []
    :digits     []
-   :max-curves 20
+   :max-curves 1
    :outliers?  true
    :point-set  0})
+
+(defn points
+  "Returns the points in `state`."
+  [state]
+  (:points state))
 
 (defn add-curve
   "Adds a curve to the sketch state."

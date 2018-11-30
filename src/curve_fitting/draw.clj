@@ -1,4 +1,4 @@
-(ns curve-fitting.core
+(ns curve-fitting.draw
   (:require [metaprob.builtin :as metaprob]
             [metaprob.interpreters :as interpreters]
             [quil.applet :as applet]

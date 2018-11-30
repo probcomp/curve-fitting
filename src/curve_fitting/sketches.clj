@@ -2,10 +2,11 @@
   (:require [quil.core :as quil]
             [quil.applet :as applet]
             [quil.middleware :as middleware]
-            [curve-fitting.core :as core]
+            [curve-fitting.draw :as draw]
             [curve-fitting.db :as db]
             [curve-fitting.point-sets :as point-sets]
             [curve-fitting.scales :as scales]
+            [curve-fitting.sketches.mcmc :as mcmc]
             [curve-fitting.sketches.prior :as prior]
             [curve-fitting.sketches.resampling :as resampling]))
 
@@ -56,7 +57,12 @@
   (let [pixel-width  (scales/domain-size (:x px-pt-scales))
         pixel-height (scales/domain-size (:y px-pt-scales))]
     (applet/applet :size [pixel-width pixel-height]
-                   :draw (fn [_] (core/draw! @state px-pt-scales))
+                   :draw (fn [_] (draw/draw! @state px-pt-scales))
+                   :update (fn [_] (let [f (case (:mode @state)
+                                             :prior mcmc/update #_identity
+                                             :resampling identity
+                                             :mcmc mcmc/update)]
+                                     (swap! state f)))
                    :mouse-pressed (fn [_ event] (swap! state #(mouse-pressed % px-pt-scales event)))
                    :mouse-moved   (fn [_ event] (swap! state #(mouse-moved   % px-pt-scales event)))
                    :key-typed     (fn [_ event] (swap! state #(key-typed     % px-pt-scales event)))

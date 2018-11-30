@@ -4,6 +4,12 @@
 
 ;; Utility
 
+(defn trace-update
+  "`clojure.core/update-in` but for traces."
+  [trace path f]
+  (let [v (metaprob/trace-get trace path)]
+    (metaprob/trace-set trace path (f v))))
+
 (defn get-subtrace-in
   "`clojure.core/get-in`, but for traces. Retrieves the subtrace at the provided
   key path if it exists. Returns `nil` if any of the keys in the path are
@@ -110,22 +116,36 @@
 
 ;; Polynomial
 
+(def degree-path '(1 1 "generate-curve" 0 "degree" "uniform-sample"))
+(defn coefficient-subtrace-path [i] (list i "f" "gaussian"))
+(def coefficients-subtrace-path '(1 1 "generate-curve" 1 "coeffs" "replicate" "map"))
+
 (defn degree
   "Returns the degree from a trace of the model."
   [trace]
-  (metaprob/trace-get
-   (metaprob/trace-subtrace
-    trace
-    '(1 1 "generate-curve" 0 "degree" "uniform-sample"))))
+  (metaprob/trace-get (metaprob/trace-subtrace trace degree-path)))
+
+(defn fix-degree
+  "Fixes the degree in `trace` to `degree`."
+  [trace degree]
+  (metaprob/trace-set (metaprob/trace-subtrace trace) degree))
+
+(defn update-coefficient
+  "Returns the `i`th coefficient in `trace`."
+  [trace i f]
+  (let [coefficient-path (concat coefficients-subtrace-path
+                                 (coefficient-subtrace-path i))]
+    (trace-update trace coefficient-path f)))
 
 (defn coefficients
   "Returns the coefficients from `trace` in order."
   [trace]
-  (let [subtrace (get-subtrace-in trace [1 1 "generate-curve" 1 "coeffs" "replicate" "map"])]
-    (map #(metaprob/trace-get subtrace (list % "f" "gaussian"))
+  (let [subtrace (get-subtrace-in trace coefficients-subtrace-path)]
+    (map #(metaprob/trace-get subtrace (coefficient-subtrace-path %))
          (range (degree trace)))))
 
 (defn coefficient-function
+  "Takes a sequence of coefficients and creates a polynomial function from it."
   [coefficients]
   (fn [x]
     (->> coefficients
