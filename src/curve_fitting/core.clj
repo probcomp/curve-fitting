@@ -138,16 +138,12 @@
 (defn draw!
   "Draws the given state onto the current sketch."
   [{:keys [mode outliers? points curves max-curves digits]} px-pt-scales]
-  (let [{x-px-pt :x, y-px-pt :y} px-pt-scales
-        inverted-x-px-pt (scales/invert x-px-pt)
-        y-pt-px (scales/invert y-px-pt)
-        x-pixel-min 0]
-    (quil/background 255)
-    (draw-mode! mode outliers? px-pt-scales)
-    (draw-curve-count! curves max-curves digits px-pt-scales)
-    (let [make-opacity-scale (case mode
-                               :resampling resampling/make-opacity-scale
-                               :prior prior/make-opacity-scale)
-          opacity-scale (make-opacity-scale (map :log-score curves))]
-      (draw-curves! curves px-pt-scales opacity-scale))
-    (draw-clicked-points! points curves px-pt-scales)))
+  (quil/background 255)
+  (draw-mode! mode outliers? px-pt-scales)
+  (draw-curve-count! curves max-curves digits px-pt-scales)
+  (let [make-opacity-scale (case mode
+                             :resampling resampling/make-opacity-scale
+                             :prior prior/make-opacity-scale)
+        opacity-scale (make-opacity-scale (map :log-score curves))]
+    (draw-curves! curves px-pt-scales opacity-scale))
+  (draw-clicked-points! points curves px-pt-scales))
