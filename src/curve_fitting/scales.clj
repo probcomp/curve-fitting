@@ -1,6 +1,16 @@
 (ns curve-fitting.scales)
 
+(defprotocol Size
+  (domain-size [this] "Returns with width of the domain.")
+  (range-size  [this] "Returns the width of the range."))
+
 (defrecord LinearScale [domain-min domain-max range-min range-max]
+  Size
+  (domain-size [{:keys [domain-min domain-max]}]
+    (Math/abs (- domain-max domain-min)))
+  (range-size [{:keys [range-min range-max]}]
+    (Math/abs (- range-max range-min)))
+
   clojure.lang.IFn
   (invoke [{:keys [domain-min domain-max range-min range-max] :as scale} n]
     (if (= domain-min domain-max)

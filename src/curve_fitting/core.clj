@@ -14,6 +14,7 @@
 
 (def text-padding 5) ; distance between text and scene border
 (def point-pixel-radius 12)
+(def plot-step 1) ; x pixel width between curve points
 
 (defn draw-point-border!
   [x y radius]
@@ -46,33 +47,36 @@
     (util.quil/with-no-fill
       (util.quil/draw-circle pixel-x pixel-y radius))))
 
-(defn draw-plot [f from to step x-scale y-scale]
+(defn draw-plot [f px-pt-scales]
   (quil/no-fill)
   (quil/begin-shape)
 
-  (let [inverted-y-scale (scales/invert y-scale)]
-    (doseq [[x y] (->> (range from to step)
+  (let [{x-px-pt :x, y-px-pt :y} px-pt-scales
+        x-px-min (:domain-min x-px-pt)
+        x-px-max (:domain-max x-px-pt)
+        y-pt-px (scales/invert y-px-pt)]
+    (doseq [[x y] (->> (range x-px-min x-px-max plot-step)
                        (map (fn [x]
-                              (let [y (f (x-scale x))]
-                                [x (inverted-y-scale y)]))))]
+                              (let [y (f (x-px-pt x))]
+                                [x (y-pt-px y)]))))]
       (quil/curve-vertex x y)))
 
   (quil/end-shape))
 
 (defn draw-clicked-points!
   "Draws the given points onto the current sketch."
-  [points curves inverted-x-scale inverted-y-scale]
+  [points curves px-pt-scales]
   (quil/no-stroke)
-
-  (let [trace-outliers (map trace/outliers (map :trace curves))
+  (let [{x-px-pt :x, y-px-pt :y} px-pt-scales
+        x-pt-px (scales/invert x-px-pt)
+        y-pt-px (scales/invert y-px-pt)
+        trace-outliers (map trace/outliers (map :trace curves))
         outlier-scores (if (empty? trace-outliers)
                          (repeat (count points) 0)
                          (map #(/ (count (filter true? %))
                                   (count curves))
                               (apply map vector trace-outliers)))]
-    (doseq [[point outlier-score] (map list
-                                       points
-                                       outlier-scores)]
+    (doseq [[point outlier-score] (map list points outlier-scores)]
       (let [point-mode (:outlier-mode point)
             [r g b] (case point-mode
                       :auto    [(int (* 255 outlier-score))
@@ -80,8 +84,8 @@
                                 (- 255 (int (* 255 outlier-score)))]
                       :inlier  [0 255 0]
                       :outlier [255 0 255])
-            pixel-x    (inverted-x-scale (:x point))
-            pixel-y    (inverted-y-scale (:y point))]
+            pixel-x (x-pt-px (:x point))
+            pixel-y (y-pt-px (:y point))]
         (draw-point-border! pixel-x pixel-y point-pixel-radius)
         (quil/with-fill [r g b 255]
           (util.quil/draw-circle pixel-x pixel-y point-pixel-radius))
@@ -93,16 +97,18 @@
 
 (defn draw-curves!
   "Draws the provided curves onto the current sketch."
-  [curves x-scale y-scale opacity-scale x-pixel-min x-pixel-max]
+  [curves px-pt-scales opacity-scale]
   (doseq [{:keys [trace log-score]} curves]
     (let [f (trace/coefficient-function (trace/coefficients trace))]
       (quil/stroke 0 (opacity-scale log-score))
-      (draw-plot f x-pixel-min x-pixel-max 1 x-scale y-scale))))
+      (draw-plot f px-pt-scales))))
 
 (defn draw-curve-count!
   "Draws the number of curves in the bottom right-hand corner"
-  [curves max-curves digits pixel-width pixel-height]
-  (let [curve-count (count curves)]
+  [curves max-curves digits px-pt-scales]
+  (let [curve-count (count curves)
+        px-width (scales/domain-size (:x px-pt-scales))
+        px-height (scales/domain-size (:y px-pt-scales))]
     (quil/rect-mode :corners)
     (quil/text-align :right :bottom)
     (quil/with-fill 0
@@ -110,46 +116,34 @@
       (let [text (str "curves: " curve-count "/" (if (seq digits)
                                                    (str (apply str digits) "_")
                                                    max-curves))
-            x (- pixel-width text-padding)
-            y (- pixel-height text-padding)]
+            x (- px-width text-padding)
+            y (- px-height text-padding)]
         (quil/text text x y)))))
 
 (defn draw-mode!
-  [mode outliers? pixel-width pixel-height]
+  [mode outliers? px-pt-scales]
   (quil/rect-mode :corners)
   (quil/text-align :left :bottom)
-  (quil/with-fill 0
-    (quil/text-size 14) ; pixels
-    (quil/text (str (case mode
-                      :prior "prior"
-                      :resampling "approximate posterior")
-                    " with outliers "
-                    (if outliers? "enabled" "disabled"))
-               text-padding
-               (- pixel-height text-padding))))
+  (let [px-height (scales/domain-size (:y px-pt-scales))]
+    (quil/with-fill 0
+      (quil/text-size 14) ; pixels
+      (quil/text (str (case mode
+                        :prior "prior"
+                        :resampling "approximate posterior")
+                      " with outliers "
+                      (if outliers? "enabled" "disabled"))
+                 text-padding
+                 (- px-height text-padding)))))
 
 (defn draw!
   "Draws the given state onto the current sketch."
-  [{:keys [mode outliers? points curves max-curves digits]} x-scale y-scale pixel-width pixel-height make-opacity-scale]
-  (let [inverted-x-scale (scales/invert x-scale)
-        inverted-y-scale (scales/invert y-scale)
-        x-pixel-max pixel-width
-        x-pixel-min 0]
-    (quil/background 255)
-    (draw-mode! mode outliers? pixel-width pixel-height)
-    (draw-curve-count! curves max-curves digits pixel-width pixel-height)
-    (let [make-opacity-scale (case mode
-                               :resampling resampling/make-opacity-scale
-                               :prior prior/make-opacity-scale)
-          opacity-scale (make-opacity-scale (map :log-score curves))]
-      (draw-curves! curves
-                    x-scale
-                    y-scale
-                    opacity-scale
-                    x-pixel-min
-                    x-pixel-max))
-
-    (draw-clicked-points! points
-                          curves
-                          inverted-x-scale
-                          inverted-y-scale)))
+  [{:keys [mode outliers? points curves max-curves digits]} px-pt-scales]
+  (quil/background 255)
+  (draw-mode! mode outliers? px-pt-scales)
+  (draw-curve-count! curves max-curves digits px-pt-scales)
+  (let [make-opacity-scale (case mode
+                             :resampling resampling/make-opacity-scale
+                             :prior prior/make-opacity-scale)
+        opacity-scale (make-opacity-scale (map :log-score curves))]
+    (draw-curves! curves px-pt-scales opacity-scale))
+  (draw-clicked-points! points curves px-pt-scales))

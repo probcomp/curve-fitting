@@ -35,7 +35,7 @@
 
 (defn fix-points
   "Modifies `trace` such that the choices the model makes concerning points match
-  the values in `pionts`. See `point-subtrace` for a description of `points`."
+  the values in `points`. See `point-subtrace` for a description of `points`."
   [trace points]
   (reduce (fn [trace [i point]]
             (metaprob/trace-set-subtrace trace
