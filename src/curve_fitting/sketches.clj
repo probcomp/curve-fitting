@@ -47,7 +47,9 @@
         (db/set-max-curves state)
 
         (= raw-key \p)
-        (db/set-points state (point-sets/next-point-set state px-pt-scales))
+        (db/set-points state (point-sets/next-point-set
+                              state
+                              px-pt-scales))
 
         :else (db/clear-curves state)))
 
