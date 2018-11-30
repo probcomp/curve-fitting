@@ -12,7 +12,8 @@
    [metaprob.interpreters :refer :all]
    [metaprob.inference :refer :all]
    [metaprob.compositional :as comp]
-   [metaprob.examples.gaussian :refer :all]))
+   [metaprob.examples.gaussian :refer :all]
+   [curve-fitting.model.distributions :refer :all]))
 
 (define generate-curve
   (gen []
@@ -26,15 +27,21 @@
 
 (define add-noise-to-curve
   (gen [curve]
+    (define outliers-enabled? (flip 1))
+
+    ;; Hyperparameters
+    (define inlier-noise (gamma 2 1))
+    (define outlier-noise (gamma 10 1))
+    (define prob-outlier (beta 1 20))
+
     ;; Outliers are enabled by default. Enable with an intervention trace.
-    (define outliers-enabled? (flip 1)) ; Are outliers enabled?
     (gen [x]
-      (define outlier-point? (flip 0.1))
+      (define outlier-point? (flip prob-outlier))
       (gaussian (curve x)
                 (if (and outliers-enabled?
                          outlier-point?)
-                  10
-                  1)))))
+                  outlier-noise
+                  inlier-noise)))))
 
 (define curve-model
   (gen [xs]

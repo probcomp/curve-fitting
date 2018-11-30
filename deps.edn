@@ -2,12 +2,13 @@
  ["src"]
 
  :deps
- {quil              {:mvn/version "2.8.0" :exclusions [com.lowagie/itext]}
-  integrant         {:mvn/version "0.7.0"}
-  integrant/repl    {:mvn/version "0.3.1"}
-  probcomp/metaprob {:git/url "https://github.com/probcomp/metaprob"
-                     :sha     "f866d01a8dd5a9354809439912ee430623c4a5c6"}}
+ {quil                   {:mvn/version "2.8.0" :exclusions [com.lowagie/itext]}
+  incanter/incanter-core {:mvn/version "1.9.3"}
+  integrant              {:mvn/version "0.7.0"}
+  integrant/repl         {:mvn/version "0.3.1"}
+  probcomp/metaprob      {:git/url "https://github.com/probcomp/metaprob"
+                          :sha     "f866d01a8dd5a9354809439912ee430623c4a5c6"}}
 
  :aliases
- {:dev {:extra-paths ["dev" "test"]}
+ {:dev  {:extra-paths ["dev" "test"]}
   :test {:extra-paths ["test"]}}}
