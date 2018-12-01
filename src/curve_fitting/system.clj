@@ -16,8 +16,8 @@
 
             :dimensions {:pixel {:x {:min 0, :max 500}
                                  :y {:min 500, :max 0}}
-                         :point {:x {:min -1, :max 1}
-                                 :y {:min -1, :max 1}}}
+                         :point {:x {:min -5, :max 5}
+                                 :y {:min -10, :max 10}}}
 
             :anti-aliasing 8}
    :engine {:state (integrant/ref :state)
