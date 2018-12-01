@@ -58,11 +58,11 @@
         pixel-height (scales/domain-size (:y px-pt-scales))]
     (applet/applet :size [pixel-width pixel-height]
                    :draw (fn [_] (draw/draw! @state px-pt-scales))
-                   :update (fn [_] (let [f (case (:mode @state)
-                                             :prior mcmc/update #_identity
-                                             :resampling identity
-                                             :mcmc mcmc/update)]
-                                     (swap! state f)))
+                   ;; :update (fn [_] (let [f (case (:mode @state)
+                   ;;                           :prior mcmc/update #_identity
+                   ;;                           :resampling identity
+                   ;;                           :mcmc mcmc/update)]
+                   ;;                   (swap! state f)))
                    :mouse-pressed (fn [_ event] (swap! state #(mouse-pressed % px-pt-scales event)))
                    :mouse-moved   (fn [_ event] (swap! state #(mouse-moved   % px-pt-scales event)))
                    :key-typed     (fn [_ event] (swap! state #(key-typed     % px-pt-scales event)))
@@ -73,13 +73,14 @@
                    :settings #(quil/smooth anti-aliasing))))
 
 (defn sampling-thread
-  [stop? state num-particles]
+  [stop? state num-particles num-mcmc-rounds]
   (future
     (try
       (loop []
         (when-not @stop?
           (let [{old-points :points, outliers? :outliers?, :as old-state} @state
                 curve (case (:mode old-state)
+                        :mcmc       (mcmc/sample-curve old-points outliers? num-mcmc-rounds)
                         :resampling (resampling/sample-curve old-points outliers? num-particles)
                         :prior      (prior/sample-curve old-points outliers?))]
             (swap! state (fn [{:keys [curves max-curves] :as new-state}]

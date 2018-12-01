@@ -132,3 +132,20 @@
 (defn update
   [state]
   (clojure.core/update state :curves #(update-curves % state)))
+
+(defn sample-curve
+  [points outliers? num-mcmc-rounds]
+  (let [xs (map :x points)
+        [_ trace score]
+        (infer :procedure model/curve-model
+               :inputs [xs]
+               :target-trace (trace/points-trace points)
+               :intervention-trace (trace/outliers-trace outliers?))]
+    {:trace (nth (iterate (fn [tr] (next-trace tr xs)) trace)
+                 num-mcmc-rounds)
+     :score score}))
+
+(defn make-opacity-scale
+  "Returns `80` regardless of input."
+  [scores]
+  (constantly 80))
