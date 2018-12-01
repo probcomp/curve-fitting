@@ -5,8 +5,8 @@
             [curve-fitting.scales :as scales]))
 
 (defn sample-curve
-  [points outliers?]
-  (let [xs (map :x points)
+  [points outliers? xs]
+  (let [#_xs #_(map :x points)
         ys (map :y points)]
     (let [[_ trace log-score]
           (interpreters/infer :procedure model/curve-model
