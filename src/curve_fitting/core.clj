@@ -1,4 +1,4 @@
-(ns curve-fitting.draw
+(ns curve-fitting.core
   (:require [metaprob.builtin :as metaprob]
             [metaprob.interpreters :as interpreters]
             [quil.applet :as applet]
@@ -98,18 +98,9 @@
   "Draws the provided curves onto the current sketch."
   [curves px-pt-scales opacity-scale]
   (doseq [{:keys [trace log-score]} curves]
-    (let [il (trace/inlier-noise trace)
-          ol (trace/outlier-noise trace)
-          _ (println il ol)
-          f (trace/coefficient-function (trace/coefficients trace))]
-      (quil/stroke 30 200 64 40)
-      (quil/stroke-weight il)
-      (draw-plot f px-pt-scales)
-
-      (quil/stroke-weight 1)
+    (let [f (trace/coefficient-function (trace/coefficients trace))]
       (quil/stroke 0 (opacity-scale log-score))
-      (draw-plot f px-pt-scales)
-      )))
+      (draw-plot f px-pt-scales))))
 
 (defn draw-curve-count!
   "Draws the number of curves in the bottom right-hand corner"
