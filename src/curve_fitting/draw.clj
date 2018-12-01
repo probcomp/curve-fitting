@@ -98,18 +98,24 @@
   "Draws the provided curves onto the current sketch."
   [curves px-pt-scales opacity-scale]
   (doseq [{:keys [trace log-score]} curves]
-    (let [il (trace/inlier-noise trace)
-          ol (trace/outlier-noise trace)
-          _ (println il ol)
+
+    (let [{x-px-pt :x, y-px-pt :y} px-pt-scales
+          y-pt-px (scales/invert y-px-pt)
+          il (y-pt-px (trace/inlier-noise trace))
+          ol (y-pt-px(trace/outlier-noise trace))
           f (trace/coefficient-function (trace/coefficients trace))]
+
+      (quil/stroke 200 30 64 40)
+      (quil/stroke-weight ol)
+      (draw-plot f px-pt-scales)
+
       (quil/stroke 30 200 64 40)
       (quil/stroke-weight il)
       (draw-plot f px-pt-scales)
 
       (quil/stroke-weight 1)
       (quil/stroke 0 (opacity-scale log-score))
-      (draw-plot f px-pt-scales)
-      )))
+      (draw-plot f px-pt-scales))))
 
 (defn draw-curve-count!
   "Draws the number of curves in the bottom right-hand corner"
