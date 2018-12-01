@@ -1,9 +1,12 @@
 (ns curve-fitting.sketches
-  (:require [quil.core :as quil]
+  (:require [metaprob.interpreters :refer [infer]]
+            [quil.core :as quil]
             [quil.applet :as applet]
             [quil.middleware :as middleware]
             [curve-fitting.draw :as draw]
             [curve-fitting.db :as db]
+            [curve-fitting.model :as model]
+            [curve-fitting.model.trace :as trace]
             [curve-fitting.point-sets :as point-sets]
             [curve-fitting.scales :as scales]
             [curve-fitting.sketches.mcmc :as mcmc]
@@ -79,18 +82,27 @@
       (loop []
         (when-not @stop?
           (let [{old-points :points, outliers? :outliers?, :as old-state} @state
+                xs (range -4.75 4.75 (/ (* 4.75 2) 29))
                 curve (case (:mode old-state)
                         :mcmc       (mcmc/sample-curve old-points outliers? num-mcmc-rounds)
                         :resampling (resampling/sample-curve old-points outliers? num-particles)
-                        :prior      (prior/sample-curve old-points outliers?))]
+                        :prior      (prior/sample-curve old-points outliers? xs))
+                trace (:trace curve)
+                points (trace/points trace)]
             (swap! state (fn [{:keys [curves max-curves] :as new-state}]
                            ;; Discard the curve if the points changed while
                            ;; we were working.
-                           (cond-> new-state
-                             (and (= (select-keys old-state [:points :mode :outliers?])
-                                     (select-keys new-state [:points :mode :outliers?]))
-                                  (< (count curves) max-curves))
-                             (db/add-curve curve)))))
+                           (let [add-them? (< (count curves) max-curves)]
+                             (if add-them?
+                               (assoc (db/add-curve new-state curve)
+                                      :points (map (fn [point x]
+                                                     (merge point
+                                                            {:x x
+                                                             :selected false
+                                                             :outlier-mode :auto}))
+                                                   points
+                                                   xs))
+                               new-state)))))
           (recur)))
       (catch Exception e
         (.printStackTrace e)))))
