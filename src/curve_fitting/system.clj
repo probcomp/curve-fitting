@@ -22,7 +22,7 @@
             :anti-aliasing 8}
    :engine {:state (integrant/ref :state)
             :num-particles 100
-            :num-mcmc-rounds 1000}})
+            :num-mcmc-rounds 100}})
 
 (defmethod integrant/init-key :mode
   [_ {:keys [mode]}]
