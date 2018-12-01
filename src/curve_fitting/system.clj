@@ -21,17 +21,18 @@
 
             :anti-aliasing 8}
    :engine {:state (integrant/ref :state)
-            :num-particles 100}})
+            :num-particles 100
+            :num-mcmc-rounds 1000}})
 
 (defmethod integrant/init-key :mode
   [_ {:keys [mode]}]
   mode)
 
 (defmethod integrant/init-key :engine
-  [_ {:keys [mode state num-particles]}]
+  [_ {:keys [mode state num-particles num-mcmc-rounds]}]
   (let [stop? (atom false)]
     (dotimes [_ 4]
-      (sketches/sampling-thread stop? state num-particles)
+      (sketches/sampling-thread stop? state num-particles num-mcmc-rounds)
       ;; Offset starting the threads so curves don't arrive in bursts.
       (Thread/sleep 250))
     stop?))
@@ -55,7 +56,6 @@
                                 (get-in dimensions [:pixel :y :max])]
                                [(get-in dimensions [:point :y :min])
                                 (get-in dimensions [:point :y :max])])]
-
 
     (def ysc y-px-pt)
     (sketches/applet {:state state

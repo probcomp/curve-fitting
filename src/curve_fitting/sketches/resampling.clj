@@ -19,6 +19,6 @@
      :score (Math/exp score)}))
 
 (defn make-opacity-scale
-  "Returns `255` regardless of input. All curves are at full opacity."
+  "Returns `80` regardless of input."
   [scores]
   (constantly 80))

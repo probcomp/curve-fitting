@@ -7,6 +7,7 @@
             [curve-fitting.model :as model]
             [curve-fitting.model.trace :as trace]
             [curve-fitting.inference :as inference]
+            [curve-fitting.sketches.mcmc :as mcmc]
             [curve-fitting.sketches.prior :as prior]
             [curve-fitting.sketches.resampling :as resampling]
             [curve-fitting.scales :as scales]
@@ -128,7 +129,8 @@
       (quil/text-size 14) ; pixels
       (quil/text (str (case mode
                         :prior "prior"
-                        :resampling "approximate posterior")
+                        :resampling "approximate posterior"
+                        :mcmc "mcmc")
                       " with outliers "
                       (if outliers? "enabled" "disabled"))
                  text-padding
@@ -141,6 +143,7 @@
   (draw-mode! mode outliers? px-pt-scales)
   (draw-curve-count! curves max-curves digits px-pt-scales)
   (let [make-opacity-scale (case mode
+                             :mcmc mcmc/make-opacity-scale
                              :resampling resampling/make-opacity-scale
                              :prior prior/make-opacity-scale)
         opacity-scale (make-opacity-scale (map :log-score curves))]

@@ -99,9 +99,12 @@
   "Sets the simulation to sample from the approximate posterior if it is sampling
   from the prior and vice versa."
   [{:keys [mode] :as state}]
-  (-> state
-      (clear-curves)
-      (assoc :mode (get {:prior :resampling, :resampling :prior} mode))))
+  (let [modes [:prior :resampling :mcmc]
+        next (get modes (mod (inc (.indexOf modes mode))
+                             (count modes)))]
+    (-> state
+        (clear-curves)
+        (assoc :mode next))))
 
 (defn outliers?
   "Returns true if outliers are enabled, false otherwise."
