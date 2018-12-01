@@ -46,10 +46,38 @@
     (util.quil/with-no-fill
       (util.quil/draw-circle pixel-x pixel-y radius))))
 
-(defn draw-plot [f px-pt-scales]
-  (quil/no-fill)
-  (quil/begin-shape)
+(defn draw-plot [f px-pt-scales trace]
+  (let [inlier-noise (Math/abs (trace/inlier-noise trace))
+        outlier-noise (Math/abs (trace/outlier-noise trace))
+        {x-px-pt :x, y-px-pt :y} px-pt-scales
+        x-px-min (:domain-min x-px-pt)
+        x-px-max (:domain-max x-px-pt)
+        y-pt-px (scales/invert y-px-pt)]
+    (letfn [(argh [adjustment xs]
+              (doseq [[x y] (->> xs
+                                 (map (fn [x]
+                                        (let [y (f (x-px-pt x))]
+                                          [x (+ (y-pt-px
+                                                 (+ y adjustment)))]))))]
+                (quil/curve-vertex x y)))]
+      (do
+        (quil/begin-shape)
+        (quil/fill 181 50 63 255)
+        (argh outlier-noise (range x-px-min x-px-max plot-step))
+        (argh (* outlier-noise -1) (range x-px-max x-px-min (* plot-step -1)))
+        (quil/end-shape))
 
+      (do
+        (quil/begin-shape)
+        (quil/fill 39 93 114 255)
+        (argh inlier-noise (range x-px-min x-px-max plot-step))
+        (argh (* inlier-noise -1) (range x-px-max x-px-min (* plot-step -1)))
+        (quil/end-shape))))
+
+  (quil/no-fill)
+  (quil/stroke-weight 4)
+  (quil/stroke 0)
+  (quil/begin-shape)
   (let [{x-px-pt :x, y-px-pt :y} px-pt-scales
         x-px-min (:domain-min x-px-pt)
         x-px-max (:domain-max x-px-pt)
@@ -59,8 +87,8 @@
                               (let [y (f (x-px-pt x))]
                                 [x (y-pt-px y)]))))]
       (quil/curve-vertex x y)))
-
-  (quil/end-shape))
+  (quil/end-shape)
+  (quil/stroke-weight 1))
 
 (defn draw-clicked-points!
   "Draws the given points onto the current sketch."
@@ -100,7 +128,7 @@
   (doseq [{:keys [trace log-score]} curves]
     (let [f (trace/coefficient-function (trace/coefficients trace))]
       (quil/stroke 0 (opacity-scale log-score))
-      (draw-plot f px-pt-scales))))
+      (draw-plot f px-pt-scales trace))))
 
 (defn draw-curve-count!
   "Draws the number of curves in the bottom right-hand corner"

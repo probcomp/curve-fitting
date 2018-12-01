@@ -58,11 +58,11 @@
         pixel-height (scales/domain-size (:y px-pt-scales))]
     (applet/applet :size [pixel-width pixel-height]
                    :draw (fn [_] (draw/draw! @state px-pt-scales))
-                   :update (fn [_] (let [f (case (:mode @state)
-                                             :prior mcmc/update #_identity
-                                             :resampling identity
-                                             :mcmc mcmc/update)]
-                                     (swap! state f)))
+                   #_:update #_(fn [_] (let [f (case (:mode @state)
+                                                 :prior mcmc/update #_identity
+                                                 :resampling identity
+                                                 :mcmc mcmc/update)]
+                                         (swap! state f)))
                    :mouse-pressed (fn [_ event] (swap! state #(mouse-pressed % px-pt-scales event)))
                    :mouse-moved   (fn [_ event] (swap! state #(mouse-moved   % px-pt-scales event)))
                    :key-typed     (fn [_ event] (swap! state #(key-typed     % px-pt-scales event)))
