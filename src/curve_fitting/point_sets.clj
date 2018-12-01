@@ -1,5 +1,6 @@
 (ns curve-fitting.point-sets
   (:require
+   [curve-fitting.model.trace :as trace]
    [curve-fitting.scales :as scales]))
 
 (defn linear-points [x-min xs y-scale]
@@ -41,12 +42,13 @@
         (assoc-in [1 :y] y-8)
         (assoc-in [8 :y] y-1))))
 
+
 (defn exp-points [point-count x-scale y-scale]
   (let
       [x-max0       (:range-max x-scale)
        x-min0       (:range-min x-scale)
-       x-indent-l   (/ (- x-max0 x-min0) 50)
-       x-indent-r   (/ (- x-max0 x-min0) 3)
+       x-indent-l   (/ (- x-max0 x-min0) 40)
+       x-indent-r   (/ (- x-max0 x-min0) 40)
        x-min        (+ x-min0 x-indent-l)
        x-max        (- x-max0 x-indent-r)
        x-range      (- x-max x-min)
@@ -54,21 +56,22 @@
 
        y-min0       (:range-min y-scale)
        y-max0       (:range-max y-scale)
-       y-indent-top (/ (- y-max0 y-min0) 50)
-       y-indent-bottom (/ (- y-max0 y-min0) 3)
-       y-min        (+ y-min0 y-indent-bottom)
-       y-max        (- y-max0 y-indent-top)
+       ;; y-indent-top (/ (- y-max0 y-min0) 40)
+       ;; y-indent-bottom (/ (- y-max0 y-min0) 40)
+       y-min        y-min0 ;;(+ y-min0 y-indent-bottom)
+       y-max        y-max0 ;; (- y-max0 y-indent-top)
 
        xs (map-indexed (fn [ix interval]
                          (+ x-min (* ix interval)))
                        (repeat 10 x-interval))
 
-       ys (map #(Math/pow (+ % (/ (- y-max0 y-min0) 2)) 2) xs)
-       y-scale (scales/->LinearScale (first ys) (last ys) y-min y-max)]
+       coeff-fn  (trace/coefficient-function [-1 0.2 0.3])
+       ys        (vec (map coeff-fn xs))
+       ys-outlier (update ys 2 #(+ % 4))]
 
-    (map (fn [x y] {:x x :y (y-scale y)
+    (map (fn [x y] {:x x :y y
                     :selected false :outlier-mode :auto})
-         xs ys)))
+         xs ys-outlier)))
 
 (defn next-point-set
   [state px-pt-scales]
