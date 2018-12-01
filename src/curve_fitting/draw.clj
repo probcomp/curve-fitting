@@ -101,9 +101,10 @@
 
     (let [{x-px-pt :x, y-px-pt :y} px-pt-scales
           y-pt-px (scales/invert y-px-pt)
-          il (y-pt-px (trace/inlier-noise trace))
-          ol (y-pt-px(trace/outlier-noise trace))
-          f (trace/coefficient-function (trace/coefficients trace))]
+          il (Math/abs (y-pt-px (trace/inlier-noise trace)))
+          ol (Math/abs (y-pt-px (trace/outlier-noise trace)))
+          f (trace/coefficient-function (trace/coefficients trace))
+          _ (println "il" il "ol" ol)]
 
       (quil/stroke 200 30 64 40)
       (quil/stroke-weight ol)
