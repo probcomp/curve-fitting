@@ -141,10 +141,7 @@
                :inputs [xs]
                :target-trace (trace/points-trace points)
                :intervention-trace (trace/outliers-trace outliers?))]
-    {:trace
-     (reduce (fn [s _] (update s))
-             trace
-             (range num-mcmc-rounds))
+    {:trace (nth (iterate update trace) num-mcmc-rounds)
      :score score}))
 
 (defn make-opacity-scale
